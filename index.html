@@ -1,10 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Bible perso</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Éditeur Biblique Personnalisé</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Test GitHub Pages</h1>
+
+    <div class="container">
+        <h1>Mon Éditeur Biblique</h1>
+        <p>Sélectionne un passage à lire ou à modifier.</p>
+
+        <div class="selection-controls">
+            <select id="book-select"></select>
+            <select id="chapter-select" disabled></select>
+            <select id="verse-select" disabled></select>
+        </div>
+
+        <div class="mode-toggle">
+            <button id="toggle-mode-button">Passer en mode Édition</button>
+        </div>
+
+        <div id="text-display">
+            </div>
+
+        <div id="edit-area" style="display: none;">
+            <textarea id="text-editor" placeholder="Commence à taper ta version ici..."></textarea>
+        </div>
+    </div>
+
+    <script src="bible-data.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
