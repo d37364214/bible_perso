@@ -45,6 +45,7 @@ p {
 
 .selection-controls select {
     flex-grow: 1; /* Permet aux listes de prendre tout l'espace disponible */
+    min-width: 150px; /* Ajouté pour fixer une taille minimale */
     padding: 12px;
     border: 1px solid #87ceeb; /* Bleu ciel */
     border-radius: 8px;
