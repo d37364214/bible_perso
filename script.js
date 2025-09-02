@@ -27,26 +27,27 @@ if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
 function initializeApp() {
     // --- FONCTIONS DE GESTION DE L'INTERFACE ---
     function populateDropdowns() {
-    // Remplissage de la liste des livres à partir des deux testaments
-    let bookIndex = 0;
-    for (const testament of BIBLEDATA.Testaments) {
-        for (const book of testament.Books) {
-            const option = document.createElement('option');
-            option.value = bookIndex;
-            option.textContent = book.Name;
-            bookSelect.appendChild(option);
-            bookIndex++;
+        let bookIndex = 0;
+        for (const testament of BIBLEDATA.Testaments) {
+            for (const book of testament.Books) {
+                const option = document.createElement('option');
+                option.value = bookIndex;
+                // Utiliser le nom du livre si disponible, sinon l'abréviation
+                option.textContent = book.Name || book.Abbreviation;
+                bookSelect.appendChild(option);
+                bookIndex++;
+            }
+        }
+
+        if (bookSelect.options.length > 0) {
+            // Assure qu'au moins une option est sélectionnée
+            if (bookSelect.selectedIndex === -1) {
+                bookSelect.selectedIndex = 0;
+            }
+            selectedBookIndex = bookSelect.value;
+            updateChapters();
         }
     }
-
-    // Sélectionnez le premier livre par défaut
-    if (bookSelect.options.length > 0) {
-        bookSelect.selectedIndex = 0;
-        selectedBookIndex = bookSelect.value;
-        updateChapters();
-    }
-}
-
 
     function updateChapters() {
         chapterSelect.innerHTML = '<option disabled selected value="">Chapitre</option>';
@@ -57,11 +58,17 @@ function initializeApp() {
             for (const chapter of book.Chapters) {
                 const option = document.createElement('option');
                 option.value = chapterIndex;
-                option.textContent = `Chapitre ${chapter.ID}`;
+                // Utiliser l'ID du chapitre si disponible, sinon 1
+                const chapterID = chapter.ID || 1;
+                option.textContent = `Chapitre ${chapterID}`;
                 chapterSelect.appendChild(option);
                 chapterIndex++;
             }
             chapterSelect.disabled = false;
+            // Sélectionne le premier chapitre par défaut
+            if (chapterSelect.options.length > 1) {
+                chapterSelect.selectedIndex = 1;
+            }
             selectedChapterIndex = chapterSelect.value;
             updateVerses();
         }
@@ -76,11 +83,17 @@ function initializeApp() {
             for (const verse of chapter.Verses) {
                 const option = document.createElement('option');
                 option.value = verseIndex;
-                option.textContent = `Verset ${verse.ID}`;
+                // Utiliser l'ID du verset si disponible, sinon 1
+                const verseID = verse.ID || 1;
+                option.textContent = `Verset ${verseID}`;
                 verseSelect.appendChild(option);
                 verseIndex++;
             }
             verseSelect.disabled = false;
+            // Sélectionne le premier verset par défaut
+            if (verseSelect.options.length > 1) {
+                verseSelect.selectedIndex = 1;
+            }
             selectedVerseIndex = verseSelect.value;
             renderVerse();
         }
@@ -123,7 +136,9 @@ function initializeApp() {
             return;
         }
 
-        const verseId = `${getSelectedBook().Abbreviation}_${getSelectedChapter().ID}_${verse.ID}`;
+        const verseID = verse.ID || 1;
+        const chapterID = getSelectedChapter().ID || 1;
+        const verseId = `${getSelectedBook().Abbreviation}_${chapterID}_${verseID}`;
         const originalText = verse.Text;
         const editedText = editedData[verseId] || originalText;
 
@@ -174,7 +189,9 @@ function initializeApp() {
         const verse = getSelectedVerse();
         if (!verse) return;
         
-        const verseId = `${getSelectedBook().Abbreviation}_${getSelectedChapter().ID}_${verse.ID}`;
+        const verseID = verse.ID || 1;
+        const chapterID = getSelectedChapter().ID || 1;
+        const verseId = `${getSelectedBook().Abbreviation}_${chapterID}_${verseID}`;
         const originalText = verse.Text;
         const editedText = textEditor.value;
 
