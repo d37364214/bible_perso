@@ -3,19 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bible Perso </title>
+    <title>Mon Éditeur Biblique Personnalisé</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
     <div class="container">
-        <h1>Ma bible perso </h1>
+        <h1>Ma Bible perso</h1>
         <p>Sélectionne un passage à lire ou à éditer.</p>
-
+        
         <div class="selection-controls">
-            <select id="book-select"></select>
-            <select id="chapter-select" disabled></select>
-            <select id="verse-select" disabled></select>
+            <select id="book-select">
+                <option disabled selected value="">Livre</option>
+            </select>
+            <select id="chapter-select" disabled>
+                <option disabled selected value="">Chapitre</option>
+            </select>
+            <select id="verse-select" disabled>
+                <option disabled selected value="">Verset</option>
+            </select>
         </div>
 
         <div class="mode-toggle">
@@ -23,7 +29,7 @@
         </div>
 
         <div id="text-display">
-            </div>
+        </div>
 
         <div id="edit-area" style="display: none;">
             <textarea id="text-editor" placeholder="Commence à taper ta version ici..."></textarea>
