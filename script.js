@@ -27,17 +27,26 @@ if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
 function initializeApp() {
     // --- FONCTIONS DE GESTION DE L'INTERFACE ---
     function populateDropdowns() {
-        let bookIndex = 0;
-        for (const testament of BIBLEDATA.Testaments) {
-            for (const book of testament.Books) {
-                const option = document.createElement('option');
-                option.value = bookIndex;
-                option.textContent = book.Name;
-                bookSelect.appendChild(option);
-                bookIndex++;
-            }
+    // Remplissage de la liste des livres à partir des deux testaments
+    let bookIndex = 0;
+    for (const testament of BIBLEDATA.Testaments) {
+        for (const book of testament.Books) {
+            const option = document.createElement('option');
+            option.value = bookIndex;
+            option.textContent = book.Name;
+            bookSelect.appendChild(option);
+            bookIndex++;
         }
     }
+
+    // Sélectionnez le premier livre par défaut
+    if (bookSelect.options.length > 0) {
+        bookSelect.selectedIndex = 0;
+        selectedBookIndex = bookSelect.value;
+        updateChapters();
+    }
+}
+
 
     function updateChapters() {
         chapterSelect.innerHTML = '<option disabled selected value="">Chapitre</option>';
