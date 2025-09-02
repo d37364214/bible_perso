@@ -9,82 +9,119 @@ const textEditor = document.getElementById('text-editor');
 
 // Variables de gestion de l'état
 let currentMode = 'read'; // 'read' ou 'edit'
-let selectedBook = '';
-let selectedChapter = '';
-let selectedVerse = '';
+let selectedBookIndex = -1;
+let selectedChapterIndex = -1;
+let selectedVerseIndex = -1;
 
-// On prépare une structure pour les données éditées, qui sera stockée dans localStorage
+// On prépare une structure pour les données éditées
 let editedData = {};
 
 // --- FONCTIONS DE GESTION DE L'INTERFACE ---
 
-// Fonction pour peupler les listes déroulantes
 function populateDropdowns() {
-    // Remplissage de la liste des livres
-    for (const book in BIBLEDATA) {
-        const option = document.createElement('option');
-        option.value = book;
-        option.textContent = BIBLEDATA[book].name;
-        bookSelect.appendChild(option);
+    // Remplissage de la liste des livres à partir des deux testaments
+    let bookIndex = 0;
+    for (const testament of BIBLEDATA.Testaments) {
+        for (const book of testament.Books) {
+            const option = document.createElement('option');
+            option.value = bookIndex;
+            option.textContent = book.Name;
+            bookSelect.appendChild(option);
+            bookIndex++;
+        }
     }
 }
 
-// Fonction pour mettre à jour la liste des chapitres
 function updateChapters() {
     chapterSelect.innerHTML = '';
     chapterSelect.disabled = true;
-    if (selectedBook) {
-        for (const chapter in BIBLEDATA[selectedBook].chapters) {
+    if (selectedBookIndex !== -1) {
+        const book = getSelectedBook();
+        let chapterIndex = 0;
+        for (const chapter of book.Chapters) {
             const option = document.createElement('option');
-            option.value = chapter;
-            option.textContent = `Chapitre ${chapter}`;
+            option.value = chapterIndex;
+            option.textContent = `Chapitre ${chapter.ID}`;
             chapterSelect.appendChild(option);
+            chapterIndex++;
         }
         chapterSelect.disabled = false;
+        selectedChapterIndex = chapterSelect.value;
         updateVerses();
     }
 }
 
-// Fonction pour mettre à jour la liste des versets
 function updateVerses() {
     verseSelect.innerHTML = '';
     verseSelect.disabled = true;
-    if (selectedBook && selectedChapter) {
-        const versesCount = Object.keys(BIBLEDATA[selectedBook].chapters[selectedChapter]).length;
-        for (let i = 1; i <= versesCount; i++) {
+    if (selectedBookIndex !== -1 && selectedChapterIndex !== -1) {
+        const chapter = getSelectedChapter();
+        let verseIndex = 0;
+        for (const verse of chapter.Verses) {
             const option = document.createElement('option');
-            option.value = i;
-            option.textContent = `Verset ${i}`;
+            option.value = verseIndex;
+            option.textContent = `Verset ${verse.ID}`;
             verseSelect.appendChild(option);
+            verseIndex++;
         }
         verseSelect.disabled = false;
+        selectedVerseIndex = verseSelect.value;
         renderVerse();
     }
 }
 
-// Fonction pour afficher le verset dans la bonne zone
+function getSelectedBook() {
+    let currentBookIndex = 0;
+    for (const testament of BIBLEDATA.Testaments) {
+        for (const book of testament.Books) {
+            if (currentBookIndex === parseInt(selectedBookIndex)) {
+                return book;
+            }
+            currentBookIndex++;
+        }
+    }
+    return null;
+}
+
+function getSelectedChapter() {
+    const book = getSelectedBook();
+    if (book && book.Chapters && selectedChapterIndex !== -1) {
+        return book.Chapters[selectedChapterIndex];
+    }
+    return null;
+}
+
+function getSelectedVerse() {
+    const chapter = getSelectedChapter();
+    if (chapter && chapter.Verses && selectedVerseIndex !== -1) {
+        return chapter.Verses[selectedVerseIndex];
+    }
+    return null;
+}
+
 function renderVerse() {
-    if (!selectedBook || !selectedChapter || !selectedVerse) {
+    const verse = getSelectedVerse();
+    if (!verse) {
         textDisplay.innerHTML = 'Sélectionnez un verset.';
         editArea.style.display = 'none';
         return;
     }
 
-    const verseId = `${selectedBook}_${selectedChapter}_${selectedVerse}`;
-    let verseText = editedData[verseId] || BIBLEDATA[selectedBook].chapters[selectedChapter][selectedVerse];
+    const verseId = `${getSelectedBook().Abbreviation}_${getSelectedChapter().ID}_${verse.ID}`;
+    const originalText = verse.Text;
+    const editedText = editedData[verseId] || originalText;
 
     if (currentMode === 'read') {
-        textDisplay.innerHTML = `<p>${verseText}</p>`;
+        textDisplay.innerHTML = `<p>${editedText}</p>`;
         textDisplay.style.display = 'block';
         editArea.style.display = 'none';
     } else {
-        textEditor.value = stripHtmlTags(verseText);
+        textEditor.value = stripHtmlTags(editedText);
         editArea.style.display = 'block';
         textDisplay.style.display = 'none';
     }
 }
 
-// Petite fonction utilitaire pour enlever les balises HTML (pour l'édition)
 function stripHtmlTags(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     return doc.body.textContent || "";
@@ -92,52 +129,50 @@ function stripHtmlTags(html) {
 
 // --- FONCTIONS DE GESTION DE L'ÉTAT ET DE LA SAUVEGARDE ---
 
-// Fonction pour charger la dernière position et les données éditées
 function loadState() {
-    const savedBook = localStorage.getItem('lastBook');
-    const savedChapter = localStorage.getItem('lastChapter');
-    const savedVerse = localStorage.getItem('lastVerse');
+    const savedBookIndex = localStorage.getItem('lastBookIndex');
+    const savedChapterIndex = localStorage.getItem('lastChapterIndex');
+    const savedVerseIndex = localStorage.getItem('lastVerseIndex');
     const savedData = localStorage.getItem('editedData');
 
     if (savedData) {
         editedData = JSON.parse(savedData);
     }
 
-    if (savedBook && savedChapter && savedVerse) {
-        selectedBook = savedBook;
-        selectedChapter = savedChapter;
-        selectedVerse = savedVerse;
-        bookSelect.value = selectedBook;
+    if (savedBookIndex && savedChapterIndex && savedVerseIndex) {
+        selectedBookIndex = savedBookIndex;
+        selectedChapterIndex = savedChapterIndex;
+        selectedVerseIndex = savedVerseIndex;
+        bookSelect.value = selectedBookIndex;
         updateChapters();
-        chapterSelect.value = selectedChapter;
+        chapterSelect.value = selectedChapterIndex;
         updateVerses();
-        verseSelect.value = selectedVerse;
+        verseSelect.value = selectedVerseIndex;
         renderVerse();
     } else {
-        // Sélection par défaut
-        selectedBook = bookSelect.value;
+        selectedBookIndex = bookSelect.value;
         updateChapters();
     }
 }
 
-// Fonction de sauvegarde automatique
 function autoSave() {
-    const verseId = `${selectedBook}_${selectedChapter}_${selectedVerse}`;
-    const originalText = BIBLEDATA[selectedBook].chapters[selectedChapter][selectedVerse];
+    const verse = getSelectedVerse();
+    if (!verse) return;
+    
+    const verseId = `${getSelectedBook().Abbreviation}_${getSelectedChapter().ID}_${verse.ID}`;
+    const originalText = verse.Text;
     const editedText = textEditor.value;
 
     if (editedText !== originalText && editedText !== '') {
-        // On sauvegarde le texte modifié, avec les balises <strong>
         editedData[verseId] = `<strong>${editedText}</strong>`;
     } else {
-        // Si le texte est de nouveau identique à l'original ou vide, on le supprime
         delete editedData[verseId];
     }
 
     localStorage.setItem('editedData', JSON.stringify(editedData));
-    localStorage.setItem('lastBook', selectedBook);
-    localStorage.setItem('lastChapter', selectedChapter);
-    localStorage.setItem('lastVerse', selectedVerse);
+    localStorage.setItem('lastBookIndex', selectedBookIndex);
+    localStorage.setItem('lastChapterIndex', selectedChapterIndex);
+    localStorage.setItem('lastVerseIndex', selectedVerseIndex);
 
     console.log('Sauvegarde automatique effectuée !');
 }
@@ -145,17 +180,17 @@ function autoSave() {
 // --- GESTION DES ÉVÉNEMENTS ---
 
 bookSelect.addEventListener('change', (e) => {
-    selectedBook = e.target.value;
+    selectedBookIndex = e.target.value;
     updateChapters();
 });
 
 chapterSelect.addEventListener('change', (e) => {
-    selectedChapter = e.target.value;
+    selectedChapterIndex = e.target.value;
     updateVerses();
 });
 
 verseSelect.addEventListener('change', (e) => {
-    selectedVerse = e.target.value;
+    selectedVerseIndex = e.target.value;
     renderVerse();
 });
 
