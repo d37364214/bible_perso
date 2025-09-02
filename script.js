@@ -17,12 +17,10 @@ let selectedVerseIndex = -1;
 let editedData = {};
 
 // --- VÉRIFICATION DES DONNÉES ---
-// On vérifie que les données de la Bible sont bien chargées
 if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
     textDisplay.innerHTML = `<p style="color:red; text-align:center;">Erreur de chargement des données. Veuillez vérifier le fichier bible-data.js.</p>`;
     console.error("Erreur: La variable BIBLEDATA n'est pas définie ou ne contient pas la bonne structure.");
 } else {
-    // Si les données sont présentes, on lance l'application
     initializeApp();
 }
 
