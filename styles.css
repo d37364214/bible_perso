@@ -1,0 +1,127 @@
+/* Styles généraux pour l'ensemble de la page */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #e9f2f9; /* Bleu ciel très clair */
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Conteneur principal de l'application */
+.container {
+    width: 95%;
+    max-width: 900px;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid #c9e6f8; /* Bordure bleu ciel */
+}
+
+h1 {
+    color: #005f9c; /* Bleu profond */
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 0.5em;
+}
+
+p {
+    text-align: center;
+    color: #666;
+    margin-bottom: 2em;
+}
+
+/* Style des contrôles de sélection (les listes déroulantes) */
+.selection-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px; /* Espace entre les listes */
+    margin-bottom: 20px;
+}
+
+.selection-controls select {
+    flex-grow: 1; /* Permet aux listes de prendre tout l'espace disponible */
+    padding: 12px;
+    border: 1px solid #87ceeb; /* Bleu ciel */
+    border-radius: 8px;
+    background-color: #f0f8ff; /* Alise bleu, très clair */
+    font-size: 1em;
+    color: #005f9c;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.selection-controls select:focus {
+    outline: none;
+    border-color: #00a6c9; /* Turquoise */
+    box-shadow: 0 0 5px rgba(0, 166, 201, 0.5);
+}
+
+/* Style du bouton de mode */
+.mode-toggle {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#toggle-mode-button {
+    padding: 12px 25px;
+    background-color: #00a6c9; /* Turquoise */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#toggle-mode-button:hover {
+    background-color: #007c97; /* Turquoise plus foncé au survol */
+}
+
+/* Zones de texte */
+#text-display,
+#edit-area {
+    background-color: #f8ffff; /* Fond très clair */
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #c9e6f8;
+    min-height: 250px; /* Hauteur minimale pour la zone de lecture/édition */
+    line-height: 1.8;
+    color: #444;
+    text-align: justify;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+#text-display p {
+    margin: 0;
+    text-align: left;
+}
+
+#text-display strong {
+    color: #005f9c; /* Couleur forte pour les textes en gras */
+    font-weight: bold;
+}
+
+#text-editor {
+    width: 100%;
+    min-height: 250px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background-color: transparent;
+    font-size: 1em;
+    line-height: 1.8;
+    resize: none; /* Empêche le redimensionnement par l'utilisateur */
+    color: #222;
+}
+
+#edit-area:focus-within {
+    border-color: #00a6c9; /* Met en évidence l'encadré en édition */
+    box-shadow: 0 0 5px rgba(0, 166, 201, 0.5);
+}
