@@ -32,7 +32,8 @@ function initializeApp() {
             for (const book of testament.Books) {
                 const option = document.createElement('option');
                 option.value = bookIndex;
-                option.textContent = book.Name || book.Abbreviation;
+                // Utiliser la clé 'Text' pour le nom du livre si disponible, sinon 'Name' ou 'Abbreviation'
+                option.textContent = book.Text || book.Name || book.Abbreviation;
                 bookSelect.appendChild(option);
                 bookIndex++;
             }
@@ -135,7 +136,8 @@ function initializeApp() {
 
         const verseID = verse.ID || 1;
         const chapterID = getSelectedChapter().ID || 1;
-        const verseId = `${getSelectedBook().Abbreviation}_${chapterID}_${verseID}`;
+        const bookAbbr = getSelectedBook().Abbreviation || getSelectedBook().Text;
+        const verseId = `${bookAbbr}_${chapterID}_${verseID}`;
         const originalText = verse.Text;
         const editedText = editedData[verseId] || originalText;
 
@@ -172,9 +174,9 @@ function initializeApp() {
             selectedVerseIndex = savedVerseIndex;
             bookSelect.value = selectedBookIndex;
             updateChapters();
-            chapterSelect.value = selectedChapterIndex;
+            chapterSelect.value = savedChapterIndex;
             updateVerses();
-            verseSelect.value = selectedVerseIndex;
+            verseSelect.value = savedVerseIndex;
             renderVerse();
         } else {
             selectedBookIndex = bookSelect.value;
@@ -188,7 +190,8 @@ function initializeApp() {
         
         const verseID = verse.ID || 1;
         const chapterID = getSelectedChapter().ID || 1;
-        const verseId = `${getSelectedBook().Abbreviation}_${chapterID}_${verseID}`;
+        const bookAbbr = getSelectedBook().Abbreviation || getSelectedBook().Text;
+        const verseId = `${bookAbbr}_${chapterID}_${verseID}`;
         const originalText = verse.Text;
         const editedText = textEditor.value;
 
