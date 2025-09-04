@@ -6,7 +6,7 @@
     },
     "graph": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+      "args": ["-y", "@modelcontextprotocol/server-graph", "/workspaces/bible_perso"]
     }
   }
 }
