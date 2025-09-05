@@ -9,6 +9,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 /* Conteneur principal de l'application */
@@ -21,6 +22,7 @@ body {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     border: 1px solid #c9e6f8; /* Bordure bleu ciel */
     position: relative; /* Indispensable pour positionner le bouton de mode */
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
 }
 
 h1 {
@@ -36,18 +38,43 @@ p {
     margin-bottom: 2em;
 }
 
+/* Styles pour le groupe de boutons en haut à droite */
+.top-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px; /* Espace entre les boutons */
+    z-index: 10;
+}
+
+.top-controls button {
+    padding: 8px 15px; /* Réduction de la taille */
+    background-color: #00a6c9; /* Turquoise */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9em; /* Réduction de la taille de la police */
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.top-controls button:hover {
+    background-color: #007c97; /* Turquoise plus foncé au survol */
+}
+
 /* Style des contrôles de sélection (les listes déroulantes) */
 .selection-controls {
     display: flex;
     justify-content: space-between;
     gap: 15px; /* Espace entre les listes */
     margin-bottom: 20px;
-    align-items: center; /* NOUVEAU: Alignement vertical */
+    align-items: center;
 }
 
 .selection-controls select {
-    flex-grow: 1; /* Permet aux listes de prendre tout l'espace disponible */
-    /* Mise à jour pour une meilleure adaptation et éviter le débordement */
+    flex-grow: 1;
     width: 30%;
     min-width: 100px; 
     padding: 12px;
@@ -64,30 +91,6 @@ p {
     outline: none;
     border-color: #00a6c9; /* Turquoise */
     box-shadow: 0 0 5px rgba(0, 166, 201, 0.5);
-}
-
-/* Styles pour le nouveau bouton de mode (lecture/édition) */
-.mode-toggle {
-    position: absolute;
-    top: 20px; /* Ajuste la position verticale */
-    right: 20px; /* Ajuste la position horizontale */
-    z-index: 10;
-}
-
-#toggle-mode-button {
-    padding: 8px 15px; /* Réduction de la taille */
-    background-color: #00a6c9; /* Turquoise */
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.9em; /* Réduction de la taille de la police */
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-#toggle-mode-button:hover {
-    background-color: #007c97; /* Turquoise plus foncé au survol */
 }
 
 /* Styles pour le système de navigation (précédent/suivant) */
@@ -163,6 +166,63 @@ p {
     border-color: #00a6c9; /* Met en évidence l'encadré en édition */
     box-shadow: 0 0 5px rgba(0, 166, 201, 0.5);
 }
+
+/* --- DÉBUT DES STYLES POUR LE MODE SOMBRE --- */
+.dark-mode body {
+    background-color: #121212; /* Gris très foncé */
+    color: #e0e0e0; /* Gris clair pour le texte */
+}
+
+.dark-mode .container {
+    background-color: #1e1e1e; /* Gris foncé pour le conteneur */
+    border: 1px solid #333;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode h1 {
+    color: #bb86fc; /* Une couleur vive et lisible */
+}
+
+.dark-mode p {
+    color: #b0b0b0;
+}
+
+.dark-mode .selection-controls select {
+    border: 1px solid #444;
+    background-color: #2a2a2a;
+    color: #bb86fc;
+}
+
+.dark-mode .selection-controls select:focus {
+    border-color: #bb86fc;
+    box-shadow: 0 0 5px rgba(187, 134, 252, 0.5);
+}
+
+.dark-mode .verse-navigation .current-verse-info {
+    color: #e0e0e0;
+}
+
+.dark-mode #text-display,
+.dark-mode #edit-area {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+    color: #e0e0e0;
+}
+
+.dark-mode #text-display strong {
+    color: #bb86fc;
+}
+
+.dark-mode #text-editor {
+    color: #e0e0e0;
+}
+
+.dark-mode #edit-area:focus-within {
+    border-color: #bb86fc;
+    box-shadow: 0 0 5px rgba(187, 134, 252, 0.5);
+}
+/* --- FIN DES STYLES POUR LE MODE SOMBRE --- */
 
 /* Media Query pour les petits écrans (smartphones) */
 @media (max-width: 600px) {
