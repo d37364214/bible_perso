@@ -64,6 +64,34 @@ p {
     background-color: #007c97; /* Turquoise plus foncé au survol */
 }
 
+/* NOUVEAU: Styles pour les contrôles de sauvegarde/chargement */
+.storage-controls {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.storage-controls button {
+    padding: 10px 20px;
+    background-color: #007c97; /* Un bleu plus doux */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 0 5px; /* Espace entre les boutons */
+}
+
+.storage-controls button:hover {
+    background-color: #005f77;
+}
+
+.storage-controls button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
 /* Style des contrôles de sélection (les listes déroulantes) */
 .selection-controls {
     display: flex;
@@ -185,6 +213,15 @@ p {
 
 .dark-mode p {
     color: #b0b0b0;
+}
+
+.dark-mode .storage-controls button {
+    background-color: #bb86fc;
+    color: #121212;
+}
+
+.dark-mode .storage-controls button:hover {
+    background-color: #985fe0;
 }
 
 .dark-mode .selection-controls select {
