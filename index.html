@@ -8,10 +8,14 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="container" id="main-container">
         <h1>Ma Bible perso</h1>
         <p>Sélectionne un passage à lire ou à éditer.</p>
         
+        <div class="mode-toggle">
+            <button id="toggle-mode-button">Édition</button>
+        </div>
+
         <div class="selection-controls">
             <select id="book-select">
                 <option disabled selected value="">Livre</option>
@@ -23,9 +27,11 @@
                 <option disabled selected value="">Verset</option>
             </select>
         </div>
-
-        <div class="mode-toggle">
-            <button id="toggle-mode-button">Passer en mode Édition</button>
+        
+        <div class="verse-navigation" style="display: none;">
+            <button id="previous-verse-btn">&lt;&lt; Précédent</button>
+            <span class="current-verse-info"></span>
+            <button id="next-verse-btn">Suivant &gt;&gt;</button>
         </div>
 
         <div id="text-display">
@@ -34,6 +40,7 @@
         <div id="edit-area" style="display: none;">
             <textarea id="text-editor" placeholder="Commence à taper ta version ici..."></textarea>
         </div>
+
     </div>
 
     <script src="bible-data.js"></script>
