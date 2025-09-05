@@ -33,6 +33,14 @@ if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
 }
 
 function initializeApp() {
+    // --- NOUVEAU: Fonction de gestion du thème ---
+    function applyTheme(theme) {
+        document.body.classList.toggle('dark-mode', theme === 'dark');
+        toggleThemeButton.textContent = theme === 'dark' ? 'Clair' : 'Sombre';
+        currentTheme = theme;
+        localStorage.setItem('theme', theme);
+    }
+    
     // --- FONCTIONS DE GESTION DE L'INTERFACE ---
     function populateDropdowns() {
         let bookIndex = 0;
@@ -170,7 +178,7 @@ function initializeApp() {
         return doc.body.textContent || "";
     }
 
-    // NOUVEAU: Fonctions de navigation
+    // Fonctions de navigation
     function goToNextVerse() {
         const chapter = getSelectedChapter();
         const book = getSelectedBook();
@@ -264,12 +272,15 @@ function initializeApp() {
             editedData = JSON.parse(savedData);
         }
 
-        // NOUVEAU: Charge le thème sauvegardé
+        // NOUVEAU: Logique de chargement du thème
+        let initialTheme = 'light';
         if (savedTheme) {
-            currentTheme = savedTheme;
-            document.body.classList.toggle('dark-mode', currentTheme === 'dark');
-            toggleThemeButton.textContent = currentTheme === 'dark' ? 'Clair' : 'Sombre';
+            initialTheme = savedTheme;
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            initialTheme = 'dark';
         }
+        applyTheme(initialTheme);
+        
 
         if (savedBookIndex && savedChapterIndex && savedVerseIndex) {
             selectedBookIndex = savedBookIndex;
@@ -334,12 +345,10 @@ function initializeApp() {
         renderVerse();
     });
 
-    // NOUVEAU: Événement pour le bouton de thème
+    // Événement pour le bouton de thème
     toggleThemeButton.addEventListener('click', () => {
-        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-        document.body.classList.toggle('dark-mode');
-        toggleThemeButton.textContent = currentTheme === 'dark' ? 'Clair' : 'Sombre';
-        localStorage.setItem('theme', currentTheme);
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        applyTheme(newTheme);
     });
 
     previousVerseButton.addEventListener('click', goToPreviousVerse);
