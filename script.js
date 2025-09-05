@@ -6,6 +6,11 @@ const toggleModeButton = document.getElementById('toggle-mode-button');
 const textDisplay = document.getElementById('text-display');
 const editArea = document.getElementById('edit-area');
 const textEditor = document.getElementById('text-editor');
+// NOUVEAU: Éléments de navigation
+const verseNavigationContainer = document.querySelector('.verse-navigation');
+const previousVerseButton = document.getElementById('previous-verse-btn');
+const nextVerseButton = document.getElementById('next-verse-btn');
+const currentVerseInfo = document.querySelector('.current-verse-info');
 
 // Variables de gestion de l'état
 let currentMode = 'read'; // 'read' ou 'edit'
@@ -32,14 +37,12 @@ function initializeApp() {
             for (const book of testament.Books) {
                 const option = document.createElement('option');
                 option.value = bookIndex;
-                // Utiliser la clé 'Text' pour le nom du livre si disponible, sinon 'Name' ou 'Abbreviation'
                 option.textContent = book.Text || book.Name || book.Abbreviation;
                 bookSelect.appendChild(option);
                 bookIndex++;
             }
         }
         
-        // Sélectionne le premier livre par défaut si rien n'est sélectionné
         if (bookSelect.options.length > 1) {
             if (bookSelect.selectedIndex === -1) {
                 bookSelect.selectedIndex = 1;
@@ -64,7 +67,6 @@ function initializeApp() {
                 chapterIndex++;
             }
             chapterSelect.disabled = false;
-            // Sélectionne le premier chapitre par défaut
             if (chapterSelect.options.length > 1) {
                 chapterSelect.selectedIndex = 1;
             }
@@ -88,7 +90,6 @@ function initializeApp() {
                 verseIndex++;
             }
             verseSelect.disabled = false;
-            // Sélectionne le premier verset par défaut
             if (verseSelect.options.length > 1) {
                 verseSelect.selectedIndex = 1;
             }
@@ -131,15 +132,26 @@ function initializeApp() {
         if (!verse) {
             textDisplay.innerHTML = 'Sélectionnez un verset.';
             editArea.style.display = 'none';
+            // Masque le bouton de mode et la navigation si aucun verset n'est sélectionné
+            toggleModeButton.style.display = 'none';
+            verseNavigationContainer.style.display = 'none';
             return;
         }
 
         const verseID = verse.ID || 1;
         const chapterID = getSelectedChapter().ID || 1;
-        const bookAbbr = getSelectedBook().Abbreviation || getSelectedBook().Text;
-        const verseId = `${bookAbbr}_${chapterID}_${verseID}`;
+        const bookText = getSelectedBook().Text || getSelectedBook().Abbreviation;
+        const verseId = `${bookText}_${chapterID}_${verseID}`;
         const originalText = verse.Text;
         const editedText = editedData[verseId] || originalText;
+
+        // Met à jour le texte du bouton de mode
+        toggleModeButton.textContent = currentMode === 'read' ? 'Édition' : 'Lecture';
+        // Affiche les conteneurs du bouton de mode et de la navigation
+        toggleModeButton.style.display = 'block';
+        verseNavigationContainer.style.display = 'flex';
+        // Affiche les infos du verset courant
+        currentVerseInfo.textContent = `${bookText} ${chapterID}:${verseID}`;
 
         if (currentMode === 'read') {
             textDisplay.innerHTML = `<p>${editedText}</p>`;
@@ -150,12 +162,100 @@ function initializeApp() {
             editArea.style.display = 'block';
             textDisplay.style.display = 'none';
         }
+
+        // Met à jour l'état des boutons de navigation
+        updateNavigationButtons();
     }
 
     function stripHtmlTags(html) {
         const doc = new DOMParser().parseFromString(html, 'text/html');
         return doc.body.textContent || "";
     }
+
+    // NOUVEAU: Fonctions de navigation
+    function goToNextVerse() {
+        const chapter = getSelectedChapter();
+        const book = getSelectedBook();
+        let nextVerseIndex = parseInt(selectedVerseIndex) + 1;
+        let nextChapterIndex = parseInt(selectedChapterIndex);
+        let nextBookIndex = parseInt(selectedBookIndex);
+
+        if (nextVerseIndex < chapter.Verses.length) {
+            verseSelect.value = nextVerseIndex;
+            selectedVerseIndex = nextVerseIndex;
+            renderVerse();
+        } else { // Aller au prochain chapitre
+            nextChapterIndex++;
+            if (nextChapterIndex < book.Chapters.length) {
+                chapterSelect.value = nextChapterIndex;
+                selectedChapterIndex = nextChapterIndex;
+                updateVerses();
+            } else { // Aller au prochain livre
+                nextBookIndex++;
+                if (nextBookIndex < bookSelect.options.length - 1) { // -1 pour exclure l'option "Livre"
+                    bookSelect.value = nextBookIndex;
+                    selectedBookIndex = nextBookIndex;
+                    updateChapters();
+                }
+            }
+        }
+    }
+    
+    function goToPreviousVerse() {
+        let previousVerseIndex = parseInt(selectedVerseIndex) - 1;
+        let previousChapterIndex = parseInt(selectedChapterIndex);
+        let previousBookIndex = parseInt(selectedBookIndex);
+
+        if (previousVerseIndex >= 0) {
+            verseSelect.value = previousVerseIndex;
+            selectedVerseIndex = previousVerseIndex;
+            renderVerse();
+        } else { // Aller au chapitre précédent
+            previousChapterIndex--;
+            if (previousChapterIndex >= 0) {
+                chapterSelect.value = previousChapterIndex;
+                selectedChapterIndex = previousChapterIndex;
+                updateVerses();
+                // Sélectionne le dernier verset du chapitre précédent
+                const previousChapter = getSelectedChapter();
+                verseSelect.value = previousChapter.Verses.length - 1;
+                selectedVerseIndex = previousChapter.Verses.length - 1;
+                renderVerse();
+            } else { // Aller au livre précédent
+                previousBookIndex--;
+                if (previousBookIndex >= 0) {
+                    bookSelect.value = previousBookIndex;
+                    selectedBookIndex = previousBookIndex;
+                    updateChapters();
+                    // Sélectionne le dernier chapitre du livre précédent
+                    const previousBook = getSelectedBook();
+                    chapterSelect.value = previousBook.Chapters.length - 1;
+                    selectedChapterIndex = previousBook.Chapters.length - 1;
+                    updateVerses();
+                    // Sélectionne le dernier verset du dernier chapitre
+                    const lastChapter = getSelectedChapter();
+                    verseSelect.value = lastChapter.Verses.length - 1;
+                    selectedVerseIndex = lastChapter.Verses.length - 1;
+                    renderVerse();
+                }
+            }
+        }
+    }
+
+    function updateNavigationButtons() {
+        const book = getSelectedBook();
+        const chapter = getSelectedChapter();
+        const isFirstVerse = parseInt(selectedVerseIndex) === 0;
+        const isFirstChapter = parseInt(selectedChapterIndex) === 0;
+        const isFirstBook = parseInt(selectedBookIndex) === 0;
+        const isLastVerse = parseInt(selectedVerseIndex) === chapter.Verses.length - 1;
+        const isLastChapter = parseInt(selectedChapterIndex) === book.Chapters.length - 1;
+        const isLastBook = parseInt(selectedBookIndex) === bookSelect.options.length - 2; // -2 car le 1er est 'Livre'
+
+        previousVerseButton.disabled = isFirstVerse && isFirstChapter && isFirstBook;
+        nextVerseButton.disabled = isLastVerse && isLastChapter && isLastBook;
+    }
+
 
     // --- FONCTIONS DE GESTION DE L'ÉTAT ET DE LA SAUVEGARDE ---
     function loadState() {
@@ -170,13 +270,13 @@ function initializeApp() {
 
         if (savedBookIndex && savedChapterIndex && savedVerseIndex) {
             selectedBookIndex = savedBookIndex;
-            selectedChapterIndex = savedChapterIndex;
-            selectedVerseIndex = savedVerseIndex;
             bookSelect.value = selectedBookIndex;
             updateChapters();
-            chapterSelect.value = savedChapterIndex;
+            selectedChapterIndex = savedChapterIndex;
+            chapterSelect.value = selectedChapterIndex;
             updateVerses();
-            verseSelect.value = savedVerseIndex;
+            selectedVerseIndex = savedVerseIndex;
+            verseSelect.value = selectedVerseIndex;
             renderVerse();
         } else {
             selectedBookIndex = bookSelect.value;
@@ -227,9 +327,12 @@ function initializeApp() {
 
     toggleModeButton.addEventListener('click', () => {
         currentMode = currentMode === 'read' ? 'edit' : 'read';
-        toggleModeButton.textContent = currentMode === 'read' ? 'Passer en mode Édition' : 'Passer en mode Lecture';
         renderVerse();
     });
+
+    // NOUVEAU: Écouteurs d'événements pour les boutons de navigation
+    previousVerseButton.addEventListener('click', goToPreviousVerse);
+    nextVerseButton.addEventListener('click', goToNextVerse);
 
     // Lancement de l'application
     populateDropdowns();
@@ -238,3 +341,4 @@ function initializeApp() {
     // Activation de la sauvegarde automatique toutes les 2 minutes (120 000 ms)
     setInterval(autoSave, 120000);
 }
+
