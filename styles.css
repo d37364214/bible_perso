@@ -20,6 +20,7 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     border: 1px solid #c9e6f8; /* Bordure bleu ciel */
+    position: relative; /* Indispensable pour positionner le bouton de mode */
 }
 
 h1 {
@@ -41,12 +42,14 @@ p {
     justify-content: space-between;
     gap: 15px; /* Espace entre les listes */
     margin-bottom: 20px;
+    align-items: center; /* NOUVEAU: Alignement vertical */
 }
 
 .selection-controls select {
     flex-grow: 1; /* Permet aux listes de prendre tout l'espace disponible */
-    min-width: 100px; /* Taille minimale pour les listes */
-    width: fit-content; /* S'adapte au contenu */
+    /* Mise à jour pour une meilleure adaptation et éviter le débordement */
+    width: 30%;
+    min-width: 100px; 
     padding: 12px;
     border: 1px solid #87ceeb; /* Bleu ciel */
     border-radius: 8px;
@@ -63,19 +66,21 @@ p {
     box-shadow: 0 0 5px rgba(0, 166, 201, 0.5);
 }
 
-/* Style du bouton de mode */
+/* Styles pour le nouveau bouton de mode (lecture/édition) */
 .mode-toggle {
-    text-align: center;
-    margin-bottom: 20px;
+    position: absolute;
+    top: 20px; /* Ajuste la position verticale */
+    right: 20px; /* Ajuste la position horizontale */
+    z-index: 10;
 }
 
 #toggle-mode-button {
-    padding: 12px 25px;
+    padding: 8px 15px; /* Réduction de la taille */
     background-color: #00a6c9; /* Turquoise */
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 1em;
+    font-size: 0.9em; /* Réduction de la taille de la police */
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -83,6 +88,37 @@ p {
 
 #toggle-mode-button:hover {
     background-color: #007c97; /* Turquoise plus foncé au survol */
+}
+
+/* Styles pour le système de navigation (précédent/suivant) */
+.verse-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.verse-navigation button {
+    background-color: transparent;
+    border: none;
+    color: #00a6c9;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.verse-navigation button:hover {
+    background-color: rgba(0, 166, 201, 0.1);
+}
+
+.verse-navigation .current-verse-info {
+    color: #666;
+    font-size: 1em;
+    text-align: center;
+    flex-grow: 1;
 }
 
 /* Zones de texte */
@@ -126,4 +162,15 @@ p {
 #edit-area:focus-within {
     border-color: #00a6c9; /* Met en évidence l'encadré en édition */
     box-shadow: 0 0 5px rgba(0, 166, 201, 0.5);
+}
+
+/* Media Query pour les petits écrans (smartphones) */
+@media (max-width: 600px) {
+    .selection-controls {
+        flex-direction: column;
+    }
+
+    .selection-controls select {
+        width: 100%;
+    }
 }
