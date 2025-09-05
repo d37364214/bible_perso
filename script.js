@@ -13,6 +13,10 @@ const nextVerseButton = document.getElementById('next-verse-btn');
 const currentVerseInfo = document.querySelector('.current-verse-info');
 // NOUVEAU: Éléments du thème
 const toggleThemeButton = document.getElementById('toggle-theme-button');
+// NOUVEAU: Éléments de sauvegarde/chargement
+const saveFileButton = document.getElementById('save-file-button');
+const loadFileButton = document.getElementById('load-file-button');
+const loadFileInput = document.getElementById('load-file-input');
 
 // Variables de gestion de l'état
 let currentMode = 'read'; // 'read' ou 'edit'
@@ -324,6 +328,75 @@ function initializeApp() {
         console.log('Sauvegarde automatique effectuée !');
     }
 
+    // NOUVEAU: Fonctions de sauvegarde et de chargement
+    function savePersonalizedBible() {
+        // Crée une copie profonde des données originales pour ne pas les modifier
+        const personalizedData = JSON.parse(JSON.stringify(BIBLEDATA));
+
+        // Met à jour les versets avec les modifications locales
+        for (const verseId in editedData) {
+            if (editedData.hasOwnProperty(verseId)) {
+                // Parse l'ID du verset (ex: "Genèse_1_1")
+                const [bookAbbr, chapterId, verseIdNum] = verseId.split('_');
+
+                // Recherche et met à jour le verset dans la copie
+                let found = false;
+                for (const testament of personalizedData.Testaments) {
+                    for (const book of testament.Books) {
+                        // S'assure que le livre correspond à l'abréviation ou au nom complet
+                        if (book.Text === bookAbbr || book.Abbreviation === bookAbbr) {
+                            const chapter = book.Chapters.find(ch => (ch.ID || ch.ID_string) == chapterId);
+                            if (chapter) {
+                                const verse = chapter.Verses.find(v => (v.ID || v.ID_string) == verseIdNum);
+                                if (verse) {
+                                    verse.Text = editedData[verseId];
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (found) break;
+                }
+            }
+        }
+
+        const dataContent = `const BIBLEDATA = ${JSON.stringify(personalizedData, null, 2)};`;
+        const blob = new Blob([dataContent], { type: 'text/javascript' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ma-bible-personnalisee.js';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert('Votre version de la Bible a été sauvegardée !');
+    }
+
+    function loadPersonalizedBible(fileContent) {
+        // Évalue le contenu du fichier pour récupérer la variable BIBLEDATA
+        let tempBIBLEDATA = {};
+        try {
+            eval(fileContent); // Attention : cette méthode est potentiellement dangereuse si la source est inconnue.
+            tempBIBLEDATA = BIBLEDATA;
+            // Charge la nouvelle version dans l'application
+            BIBLEDATA = tempBIBLEDATA; 
+            editedData = {}; // Réinitialise les données éditées du localStorage
+            localStorage.removeItem('editedData'); // Supprime la sauvegarde locale
+            
+            // Re-initialise l'application avec les nouvelles données
+            populateDropdowns();
+            loadState();
+            alert('Votre version de la Bible a été chargée avec succès !');
+
+        } catch (e) {
+            console.error("Erreur de chargement du fichier :", e);
+            alert("Erreur: Le fichier sélectionné n'est pas une version de Bible valide.");
+        }
+    }
+
     // --- GESTION DES ÉVÉNEMENTS ---
     bookSelect.addEventListener('change', (e) => {
         selectedBookIndex = e.target.value;
@@ -349,6 +422,24 @@ function initializeApp() {
     toggleThemeButton.addEventListener('click', () => {
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         applyTheme(newTheme);
+    });
+
+    // NOUVEAU: Écouteurs d'événements pour la sauvegarde et le chargement
+    saveFileButton.addEventListener('click', savePersonalizedBible);
+    
+    loadFileButton.addEventListener('click', () => {
+        loadFileInput.click();
+    });
+
+    loadFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                loadPersonalizedBible(e.target.result);
+            };
+            reader.readAsText(file);
+        }
     });
 
     previousVerseButton.addEventListener('click', goToPreviousVerse);
