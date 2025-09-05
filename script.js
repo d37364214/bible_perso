@@ -11,12 +11,15 @@ const verseNavigationContainer = document.querySelector('.verse-navigation');
 const previousVerseButton = document.getElementById('previous-verse-btn');
 const nextVerseButton = document.getElementById('next-verse-btn');
 const currentVerseInfo = document.querySelector('.current-verse-info');
+// NOUVEAU: Éléments du thème
+const toggleThemeButton = document.getElementById('toggle-theme-button');
 
 // Variables de gestion de l'état
 let currentMode = 'read'; // 'read' ou 'edit'
 let selectedBookIndex = -1;
 let selectedChapterIndex = -1;
 let selectedVerseIndex = -1;
+let currentTheme = 'light'; // 'light' ou 'dark'
 
 // On prépare une structure pour les données éditées
 let editedData = {};
@@ -132,7 +135,6 @@ function initializeApp() {
         if (!verse) {
             textDisplay.innerHTML = 'Sélectionnez un verset.';
             editArea.style.display = 'none';
-            // Masque le bouton de mode et la navigation si aucun verset n'est sélectionné
             toggleModeButton.style.display = 'none';
             verseNavigationContainer.style.display = 'none';
             return;
@@ -145,12 +147,9 @@ function initializeApp() {
         const originalText = verse.Text;
         const editedText = editedData[verseId] || originalText;
 
-        // Met à jour le texte du bouton de mode
         toggleModeButton.textContent = currentMode === 'read' ? 'Édition' : 'Lecture';
-        // Affiche les conteneurs du bouton de mode et de la navigation
         toggleModeButton.style.display = 'block';
         verseNavigationContainer.style.display = 'flex';
-        // Affiche les infos du verset courant
         currentVerseInfo.textContent = `${bookText} ${chapterID}:${verseID}`;
 
         if (currentMode === 'read') {
@@ -163,7 +162,6 @@ function initializeApp() {
             textDisplay.style.display = 'none';
         }
 
-        // Met à jour l'état des boutons de navigation
         updateNavigationButtons();
     }
 
@@ -184,15 +182,15 @@ function initializeApp() {
             verseSelect.value = nextVerseIndex;
             selectedVerseIndex = nextVerseIndex;
             renderVerse();
-        } else { // Aller au prochain chapitre
+        } else {
             nextChapterIndex++;
             if (nextChapterIndex < book.Chapters.length) {
                 chapterSelect.value = nextChapterIndex;
                 selectedChapterIndex = nextChapterIndex;
                 updateVerses();
-            } else { // Aller au prochain livre
+            } else {
                 nextBookIndex++;
-                if (nextBookIndex < bookSelect.options.length - 1) { // -1 pour exclure l'option "Livre"
+                if (nextBookIndex < bookSelect.options.length - 1) {
                     bookSelect.value = nextBookIndex;
                     selectedBookIndex = nextBookIndex;
                     updateChapters();
@@ -210,29 +208,26 @@ function initializeApp() {
             verseSelect.value = previousVerseIndex;
             selectedVerseIndex = previousVerseIndex;
             renderVerse();
-        } else { // Aller au chapitre précédent
+        } else {
             previousChapterIndex--;
             if (previousChapterIndex >= 0) {
                 chapterSelect.value = previousChapterIndex;
                 selectedChapterIndex = previousChapterIndex;
                 updateVerses();
-                // Sélectionne le dernier verset du chapitre précédent
                 const previousChapter = getSelectedChapter();
                 verseSelect.value = previousChapter.Verses.length - 1;
                 selectedVerseIndex = previousChapter.Verses.length - 1;
                 renderVerse();
-            } else { // Aller au livre précédent
+            } else {
                 previousBookIndex--;
                 if (previousBookIndex >= 0) {
                     bookSelect.value = previousBookIndex;
                     selectedBookIndex = previousBookIndex;
                     updateChapters();
-                    // Sélectionne le dernier chapitre du livre précédent
                     const previousBook = getSelectedBook();
                     chapterSelect.value = previousBook.Chapters.length - 1;
                     selectedChapterIndex = previousBook.Chapters.length - 1;
                     updateVerses();
-                    // Sélectionne le dernier verset du dernier chapitre
                     const lastChapter = getSelectedChapter();
                     verseSelect.value = lastChapter.Verses.length - 1;
                     selectedVerseIndex = lastChapter.Verses.length - 1;
@@ -250,7 +245,7 @@ function initializeApp() {
         const isFirstBook = parseInt(selectedBookIndex) === 0;
         const isLastVerse = parseInt(selectedVerseIndex) === chapter.Verses.length - 1;
         const isLastChapter = parseInt(selectedChapterIndex) === book.Chapters.length - 1;
-        const isLastBook = parseInt(selectedBookIndex) === bookSelect.options.length - 2; // -2 car le 1er est 'Livre'
+        const isLastBook = parseInt(selectedBookIndex) === bookSelect.options.length - 2;
 
         previousVerseButton.disabled = isFirstVerse && isFirstChapter && isFirstBook;
         nextVerseButton.disabled = isLastVerse && isLastChapter && isLastBook;
@@ -263,9 +258,17 @@ function initializeApp() {
         const savedChapterIndex = localStorage.getItem('lastChapterIndex');
         const savedVerseIndex = localStorage.getItem('lastVerseIndex');
         const savedData = localStorage.getItem('editedData');
+        const savedTheme = localStorage.getItem('theme');
 
         if (savedData) {
             editedData = JSON.parse(savedData);
+        }
+
+        // NOUVEAU: Charge le thème sauvegardé
+        if (savedTheme) {
+            currentTheme = savedTheme;
+            document.body.classList.toggle('dark-mode', currentTheme === 'dark');
+            toggleThemeButton.textContent = currentTheme === 'dark' ? 'Clair' : 'Sombre';
         }
 
         if (savedBookIndex && savedChapterIndex && savedVerseIndex) {
@@ -305,6 +308,7 @@ function initializeApp() {
         localStorage.setItem('lastBookIndex', selectedBookIndex);
         localStorage.setItem('lastChapterIndex', selectedChapterIndex);
         localStorage.setItem('lastVerseIndex', selectedVerseIndex);
+        localStorage.setItem('theme', currentTheme);
 
         console.log('Sauvegarde automatique effectuée !');
     }
@@ -330,7 +334,14 @@ function initializeApp() {
         renderVerse();
     });
 
-    // NOUVEAU: Écouteurs d'événements pour les boutons de navigation
+    // NOUVEAU: Événement pour le bouton de thème
+    toggleThemeButton.addEventListener('click', () => {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.body.classList.toggle('dark-mode');
+        toggleThemeButton.textContent = currentTheme === 'dark' ? 'Clair' : 'Sombre';
+        localStorage.setItem('theme', currentTheme);
+    });
+
     previousVerseButton.addEventListener('click', goToPreviousVerse);
     nextVerseButton.addEventListener('click', goToNextVerse);
 
@@ -341,4 +352,3 @@ function initializeApp() {
     // Activation de la sauvegarde automatique toutes les 2 minutes (120 000 ms)
     setInterval(autoSave, 120000);
 }
-
