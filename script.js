@@ -38,9 +38,7 @@ let selectedChapterIndex = -1;
 let selectedVerseIndex = -1;
 let currentTheme = 'light'; // 'light' ou 'dark'
 let editedData = {};
-let bibleVersions = {
-    'bible-data.js': BIBLEDATA,
-};
+let bibleVersions = {}; // Initialisé comme un objet vide
 let currentVersionName = 'bible-data.js';
 let modifiedVersesOnly = false;
 
@@ -54,7 +52,10 @@ if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
 }
 
 function initializeApp() {
-    // --- NOUVEAU: Fonctions de gestion du thème ---
+    // NOUVEAU: Ajout de la version originale au tableau des versions au démarrage
+    bibleVersions['Version Originale'] = BIBLEDATA;
+
+    // --- Fonctions de gestion du thème ---
     function applyTheme(theme) {
         document.body.classList.toggle('dark-mode', theme === 'dark');
         toggleThemeButton.textContent = theme === 'dark' ? 'Clair' : 'Sombre';
@@ -64,9 +65,10 @@ function initializeApp() {
     
     // --- FONCTIONS DE GESTION DES VERSIONS DE LA BIBLE ---
     function saveBibleVersions() {
+        // Crée un objet pour sauvegarder les versions, en excluant l'originale
         const versionsToSave = {};
         for (const [name, data] of Object.entries(bibleVersions)) {
-            if (name !== 'bible-data.js') {
+            if (name !== 'Version Originale') {
                 versionsToSave[name] = data;
             }
         }
@@ -79,7 +81,7 @@ function initializeApp() {
         for (const [name, data] of Object.entries(savedVersions)) {
             bibleVersions[name] = data;
         }
-        currentVersionName = localStorage.getItem('currentVersion') || 'bible-data.js';
+        currentVersionName = localStorage.getItem('currentVersion') || 'Version Originale';
         updateVersionSelectors();
         switchBibleVersion(currentVersionName);
     }
@@ -88,7 +90,7 @@ function initializeApp() {
         // Met à jour le sélecteur principal
         versionSelect.innerHTML = '';
         const originalOption = document.createElement('option');
-        originalOption.value = 'bible-data.js';
+        originalOption.value = 'Version Originale';
         originalOption.textContent = 'Version Originale';
         versionSelect.appendChild(originalOption);
     
@@ -96,7 +98,7 @@ function initializeApp() {
         manageBibleSelect.innerHTML = '';
         
         for (const version in bibleVersions) {
-            if (version !== 'bible-data.js') {
+            if (version !== 'Version Originale') {
                 const option = document.createElement('option');
                 option.value = version;
                 option.textContent = version;
@@ -107,23 +109,23 @@ function initializeApp() {
         
         // Sélectionne la version actuelle dans les deux menus
         versionSelect.value = currentVersionName;
-        manageBibleSelect.value = currentVersionName !== 'bible-data.js' ? currentVersionName : '';
-        deleteBibleBtn.disabled = currentVersionName === 'bible-data.js';
-        renameBibleBtn.disabled = currentVersionName === 'bible-data.js';
+        manageBibleSelect.value = currentVersionName !== 'Version Originale' ? currentVersionName : '';
+        deleteBibleBtn.disabled = currentVersionName === 'Version Originale';
+        renameBibleBtn.disabled = currentVersionName === 'Version Originale';
     }
 
     function switchBibleVersion(versionName) {
         currentVersionName = versionName;
-        BIBLEDATA = bibleVersions[currentVersionName];
+        // On récupère la bonne version des données
+        window.BIBLEDATA = bibleVersions[currentVersionName];
+        
+        // On réinitialise les données éditées si on change de version
         editedData = {};
-        // Recharge les données éditées si on n'est pas sur la version originale
-        if (currentVersionName !== 'bible-data.js') {
+        if (currentVersionName !== 'Version Originale') {
             const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
             if (savedData) {
                 editedData = JSON.parse(savedData);
             }
-        } else {
-            localStorage.removeItem('editedData');
         }
         
         populateDropdowns();
@@ -359,8 +361,8 @@ function initializeApp() {
             } else {
                 nextBookIndex++;
                 if (nextBookIndex < bookSelect.options.length - 1) {
+                    bookSelect.value = nextBookIndex;
                     selectedBookIndex = nextBookIndex;
-                    bookSelect.value = selectedBookIndex;
                     updateChapters();
                 }
             }
@@ -390,8 +392,8 @@ function initializeApp() {
             } else {
                 previousBookIndex--;
                 if (previousBookIndex >= 0) {
-                    selectedBookIndex = previousBookIndex;
                     bookSelect.value = previousBookIndex;
+                    selectedBookIndex = previousBookIndex;
                     updateChapters();
                     const previousBook = getSelectedBook();
                     selectedChapterIndex = previousBook.Chapters.length - 1;
@@ -505,7 +507,7 @@ function initializeApp() {
         const originalText = verse.Text;
         const editedText = textEditor.value;
 
-        if (editedText !== originalText && editedText !== '') {
+        if (editedText !== stripHtmlTags(originalText) && editedText !== '') {
             editedData[verseId] = `<strong>${editedText}</strong>`;
         } else {
             delete editedData[verseId];
@@ -567,8 +569,8 @@ function initializeApp() {
         let tempBIBLEDATA = {};
         try {
             eval(fileContent);
-            tempBIBLEDATA = BIBLEDATA;
-            BIBLEDATA = tempBIBLEDATA;
+            tempBIBLEDATA = window.BIBLEDATA;
+            window.BIBLEDATA = tempBIBLEDATA;
             editedData = {};
             localStorage.removeItem('editedData');
             
@@ -624,7 +626,8 @@ function initializeApp() {
             }
             const confirmed = confirm(`Êtes-vous sûr de vouloir créer une nouvelle version nommée "${newName}" ?`);
             if (confirmed) {
-                const newVersionData = JSON.parse(JSON.stringify(BIBLEDATA));
+                // Crée une copie profonde des données de la version originale
+                const newVersionData = JSON.parse(JSON.stringify(bibleVersions['Version Originale']));
                 bibleVersions[newName] = newVersionData;
                 switchBibleVersion(newName);
                 newBibleNameInput.value = '';
@@ -663,12 +666,12 @@ function initializeApp() {
 
     deleteBibleBtn.addEventListener('click', () => {
         const versionToDelete = manageBibleSelect.value;
-        if (versionToDelete && versionToDelete !== 'bible-data.js') {
+        if (versionToDelete && versionToDelete !== 'Version Originale') {
             const confirmed = confirm(`Êtes-vous sûr de vouloir supprimer la version "${versionToDelete}" ? Cette action est irréversible.`);
             if (confirmed) {
                 delete bibleVersions[versionToDelete];
                 localStorage.removeItem(`editedData_${versionToDelete}`);
-                switchBibleVersion('bible-data.js'); // Revenir à la version originale
+                switchBibleVersion('Version Originale'); // Revenir à la version originale
             }
         } else {
             alert('Impossible de supprimer la version originale.');
