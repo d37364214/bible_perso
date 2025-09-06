@@ -17,6 +17,19 @@ const toggleThemeButton = document.getElementById('toggle-theme-button');
 const saveFileButton = document.getElementById('save-file-button');
 const loadFileButton = document.getElementById('load-file-button');
 const loadFileInput = document.getElementById('load-file-input');
+// NOUVEAU: Éléments du menu latéral
+const sidebar = document.getElementById('sidebar');
+const openSidebarBtn = document.getElementById('open-sidebar-btn');
+const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+const addBibleBtn = document.getElementById('add-bible-btn');
+const newBibleNameInput = document.getElementById('new-bible-name');
+const manageBibleSelect = document.getElementById('manage-bible-select');
+const renameBibleBtn = document.getElementById('rename-bible-btn');
+const deleteBibleBtn = document.getElementById('delete-bible-btn');
+const versionSelect = document.getElementById('version-select');
+const modifiedVersesToggle = document.getElementById('modified-verses-toggle');
+const accordionButtons = document.querySelectorAll('.accordion-button');
+
 
 // Variables de gestion de l'état
 let currentMode = 'read'; // 'read' ou 'edit'
@@ -24,9 +37,13 @@ let selectedBookIndex = -1;
 let selectedChapterIndex = -1;
 let selectedVerseIndex = -1;
 let currentTheme = 'light'; // 'light' ou 'dark'
-
-// On prépare une structure pour les données éditées
 let editedData = {};
+let bibleVersions = {
+    'bible-data.js': BIBLEDATA,
+};
+let currentVersionName = 'bible-data.js';
+let modifiedVersesOnly = false;
+
 
 // --- VÉRIFICATION DES DONNÉES ---
 if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
@@ -37,7 +54,7 @@ if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
 }
 
 function initializeApp() {
-    // --- NOUVEAU: Fonction de gestion du thème ---
+    // --- NOUVEAU: Fonctions de gestion du thème ---
     function applyTheme(theme) {
         document.body.classList.toggle('dark-mode', theme === 'dark');
         toggleThemeButton.textContent = theme === 'dark' ? 'Clair' : 'Sombre';
@@ -45,23 +62,99 @@ function initializeApp() {
         localStorage.setItem('theme', theme);
     }
     
+    // --- FONCTIONS DE GESTION DES VERSIONS DE LA BIBLE ---
+    function saveBibleVersions() {
+        const versionsToSave = {};
+        for (const [name, data] of Object.entries(bibleVersions)) {
+            if (name !== 'bible-data.js') {
+                versionsToSave[name] = data;
+            }
+        }
+        localStorage.setItem('bibleVersions', JSON.stringify(versionsToSave));
+        localStorage.setItem('currentVersion', currentVersionName);
+    }
+
+    function loadBibleVersions() {
+        const savedVersions = JSON.parse(localStorage.getItem('bibleVersions')) || {};
+        for (const [name, data] of Object.entries(savedVersions)) {
+            bibleVersions[name] = data;
+        }
+        currentVersionName = localStorage.getItem('currentVersion') || 'bible-data.js';
+        updateVersionSelectors();
+        switchBibleVersion(currentVersionName);
+    }
+
+    function updateVersionSelectors() {
+        // Met à jour le sélecteur principal
+        versionSelect.innerHTML = '';
+        const originalOption = document.createElement('option');
+        originalOption.value = 'bible-data.js';
+        originalOption.textContent = 'Version Originale';
+        versionSelect.appendChild(originalOption);
+    
+        // Met à jour le sélecteur du menu latéral
+        manageBibleSelect.innerHTML = '';
+        
+        for (const version in bibleVersions) {
+            if (version !== 'bible-data.js') {
+                const option = document.createElement('option');
+                option.value = version;
+                option.textContent = version;
+                versionSelect.appendChild(option);
+                manageBibleSelect.appendChild(option.cloneNode(true));
+            }
+        }
+        
+        // Sélectionne la version actuelle dans les deux menus
+        versionSelect.value = currentVersionName;
+        manageBibleSelect.value = currentVersionName !== 'bible-data.js' ? currentVersionName : '';
+        deleteBibleBtn.disabled = currentVersionName === 'bible-data.js';
+        renameBibleBtn.disabled = currentVersionName === 'bible-data.js';
+    }
+
+    function switchBibleVersion(versionName) {
+        currentVersionName = versionName;
+        BIBLEDATA = bibleVersions[currentVersionName];
+        editedData = {};
+        // Recharge les données éditées si on n'est pas sur la version originale
+        if (currentVersionName !== 'bible-data.js') {
+            const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
+            if (savedData) {
+                editedData = JSON.parse(savedData);
+            }
+        } else {
+            localStorage.removeItem('editedData');
+        }
+        
+        populateDropdowns();
+        loadState();
+        saveBibleVersions();
+    }
+    
     // --- FONCTIONS DE GESTION DE L'INTERFACE ---
     function populateDropdowns() {
+        bookSelect.innerHTML = '<option disabled selected value="">Livre</option>';
+        chapterSelect.innerHTML = '<option disabled selected value="">Chapitre</option>';
+        verseSelect.innerHTML = '<option disabled selected value="">Verset</option>';
+        
         let bookIndex = 0;
         for (const testament of BIBLEDATA.Testaments) {
             for (const book of testament.Books) {
                 const option = document.createElement('option');
                 option.value = bookIndex;
                 option.textContent = book.Text || book.Name || book.Abbreviation;
+                
+                // NOUVEAU: Marquer les livres avec des versets modifiés
+                if (doesBookContainEditedVerses(book)) {
+                    option.classList.add('edited-verse');
+                }
+                
                 bookSelect.appendChild(option);
                 bookIndex++;
             }
         }
         
         if (bookSelect.options.length > 1) {
-            if (bookSelect.selectedIndex === -1) {
-                bookSelect.selectedIndex = 1;
-            }
             selectedBookIndex = bookSelect.value;
             updateChapters();
         }
@@ -70,6 +163,9 @@ function initializeApp() {
     function updateChapters() {
         chapterSelect.innerHTML = '<option disabled selected value="">Chapitre</option>';
         chapterSelect.disabled = true;
+        verseSelect.innerHTML = '<option disabled selected value="">Verset</option>';
+        verseSelect.disabled = true;
+        
         if (selectedBookIndex !== -1) {
             const book = getSelectedBook();
             let chapterIndex = 0;
@@ -78,41 +174,58 @@ function initializeApp() {
                 option.value = chapterIndex;
                 const chapterID = chapter.ID || (chapterIndex + 1);
                 option.textContent = `Chapitre ${chapterID}`;
+
+                // NOUVEAU: Marquer les chapitres avec des versets modifiés
+                if (doesChapterContainEditedVerses(book, chapter)) {
+                    option.classList.add('edited-verse');
+                }
+
                 chapterSelect.appendChild(option);
                 chapterIndex++;
             }
             chapterSelect.disabled = false;
             if (chapterSelect.options.length > 1) {
-                chapterSelect.selectedIndex = 1;
+                selectedChapterIndex = chapterSelect.value;
+                updateVerses();
             }
-            selectedChapterIndex = chapterSelect.value;
-            updateVerses();
         }
     }
 
     function updateVerses() {
         verseSelect.innerHTML = '<option disabled selected value="">Verset</option>';
         verseSelect.disabled = true;
+        
         if (selectedBookIndex !== -1 && selectedChapterIndex !== -1) {
             const chapter = getSelectedChapter();
             let verseIndex = 0;
-            for (const verse of chapter.Verses) {
+            const versesToDisplay = modifiedVersesOnly ? getEditedVersesInChapter(chapter) : chapter.Verses;
+            
+            for (const verse of versesToDisplay) {
                 const option = document.createElement('option');
                 option.value = verseIndex;
                 const verseID = verse.ID || (verseIndex + 1);
                 option.textContent = `Verset ${verseID}`;
+
+                // NOUVEAU: Marquer les versets avec des modifications
+                const verseId = `${getSelectedBook().Abbreviation || getSelectedBook().Text}_${chapter.ID || (selectedChapterIndex + 1)}_${verse.ID || (verseIndex + 1)}`;
+                if (editedData.hasOwnProperty(verseId)) {
+                    option.classList.add('edited-verse');
+                }
+                
                 verseSelect.appendChild(option);
                 verseIndex++;
             }
             verseSelect.disabled = false;
             if (verseSelect.options.length > 1) {
-                verseSelect.selectedIndex = 1;
+                selectedVerseIndex = verseSelect.value;
+            } else {
+                selectedVerseIndex = -1; // Aucun verset à afficher
             }
-            selectedVerseIndex = verseSelect.value;
             renderVerse();
         }
     }
 
+    // --- FONCTIONS UTILITAIRES POUR L'ACCÈS AUX DONNÉES ---
     function getSelectedBook() {
         let currentBookIndex = 0;
         for (const testament of BIBLEDATA.Testaments) {
@@ -141,7 +254,45 @@ function initializeApp() {
         }
         return null;
     }
+    
+    function getEditedVersesInChapter(chapter) {
+        const editedVerses = [];
+        const bookAbbr = getSelectedBook().Abbreviation || getSelectedBook().Text;
+        const chapterID = chapter.ID || (chapter.Verses.findIndex(v => v === chapter.Verses[0]) + 1);
+        
+        for (const verse of chapter.Verses) {
+            const verseId = `${bookAbbr}_${chapterID}_${verse.ID || (chapter.Verses.findIndex(v => v === verse) + 1)}`;
+            if (editedData.hasOwnProperty(verseId)) {
+                editedVerses.push(verse);
+            }
+        }
+        return editedVerses;
+    }
 
+    function doesBookContainEditedVerses(book) {
+        const bookAbbr = book.Abbreviation || book.Text;
+        for (const verseId in editedData) {
+            if (verseId.startsWith(bookAbbr)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function doesChapterContainEditedVerses(book, chapter) {
+        const bookAbbr = book.Abbreviation || book.Text;
+        const chapterID = chapter.ID || (book.Chapters.findIndex(c => c === chapter) + 1);
+        const prefix = `${bookAbbr}_${chapterID}_`;
+        for (const verseId in editedData) {
+            if (verseId.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    // --- RENDU ET LOGIQUE DE L'INTERFACE ---
     function renderVerse() {
         const verse = getSelectedVerse();
         if (!verse) {
@@ -156,8 +307,11 @@ function initializeApp() {
         const chapterID = getSelectedChapter().ID || 1;
         const bookText = getSelectedBook().Text || getSelectedBook().Abbreviation;
         const verseId = `${bookText}_${chapterID}_${verseID}`;
-        const originalText = verse.Text;
-        const editedText = editedData[verseId] || originalText;
+        
+        let verseText = verse.Text;
+        if (editedData.hasOwnProperty(verseId)) {
+            verseText = editedData[verseId];
+        }
 
         toggleModeButton.textContent = currentMode === 'read' ? 'Édition' : 'Lecture';
         toggleModeButton.style.display = 'block';
@@ -165,11 +319,11 @@ function initializeApp() {
         currentVerseInfo.textContent = `${bookText} ${chapterID}:${verseID}`;
 
         if (currentMode === 'read') {
-            textDisplay.innerHTML = `<p>${editedText}</p>`;
+            textDisplay.innerHTML = `<p>${verseText}</p>`;
             textDisplay.style.display = 'block';
             editArea.style.display = 'none';
         } else {
-            textEditor.value = stripHtmlTags(editedText);
+            textEditor.value = stripHtmlTags(verseText);
             editArea.style.display = 'block';
             textDisplay.style.display = 'none';
         }
@@ -184,27 +338,29 @@ function initializeApp() {
 
     // Fonctions de navigation
     function goToNextVerse() {
-        const chapter = getSelectedChapter();
         const book = getSelectedBook();
         let nextVerseIndex = parseInt(selectedVerseIndex) + 1;
         let nextChapterIndex = parseInt(selectedChapterIndex);
         let nextBookIndex = parseInt(selectedBookIndex);
 
-        if (nextVerseIndex < chapter.Verses.length) {
-            verseSelect.value = nextVerseIndex;
+        const currentChapterVerses = modifiedVersesOnly ? getEditedVersesInChapter(getSelectedChapter()) : getSelectedChapter().Verses;
+        const currentBookVerses = modifiedVersesOnly ? getEditedVersesInBook(book) : book.Verses;
+
+        if (nextVerseIndex < currentChapterVerses.length) {
             selectedVerseIndex = nextVerseIndex;
+            verseSelect.value = selectedVerseIndex;
             renderVerse();
         } else {
             nextChapterIndex++;
             if (nextChapterIndex < book.Chapters.length) {
-                chapterSelect.value = nextChapterIndex;
                 selectedChapterIndex = nextChapterIndex;
+                chapterSelect.value = selectedChapterIndex;
                 updateVerses();
             } else {
                 nextBookIndex++;
                 if (nextBookIndex < bookSelect.options.length - 1) {
-                    bookSelect.value = nextBookIndex;
                     selectedBookIndex = nextBookIndex;
+                    bookSelect.value = selectedBookIndex;
                     updateChapters();
                 }
             }
@@ -212,71 +368,108 @@ function initializeApp() {
     }
     
     function goToPreviousVerse() {
+        const book = getSelectedBook();
         let previousVerseIndex = parseInt(selectedVerseIndex) - 1;
         let previousChapterIndex = parseInt(selectedChapterIndex);
         let previousBookIndex = parseInt(selectedBookIndex);
 
         if (previousVerseIndex >= 0) {
-            verseSelect.value = previousVerseIndex;
             selectedVerseIndex = previousVerseIndex;
+            verseSelect.value = previousVerseIndex;
             renderVerse();
         } else {
             previousChapterIndex--;
             if (previousChapterIndex >= 0) {
-                chapterSelect.value = previousChapterIndex;
                 selectedChapterIndex = previousChapterIndex;
+                chapterSelect.value = previousChapterIndex;
                 updateVerses();
-                const previousChapter = getSelectedChapter();
-                verseSelect.value = previousChapter.Verses.length - 1;
-                selectedVerseIndex = previousChapter.Verses.length - 1;
+                const previousChapterVerses = modifiedVersesOnly ? getEditedVersesInChapter(getSelectedChapter()) : getSelectedChapter().Verses;
+                selectedVerseIndex = previousChapterVerses.length - 1;
+                verseSelect.value = selectedVerseIndex;
                 renderVerse();
             } else {
                 previousBookIndex--;
                 if (previousBookIndex >= 0) {
-                    bookSelect.value = previousBookIndex;
                     selectedBookIndex = previousBookIndex;
+                    bookSelect.value = previousBookIndex;
                     updateChapters();
                     const previousBook = getSelectedBook();
-                    chapterSelect.value = previousBook.Chapters.length - 1;
                     selectedChapterIndex = previousBook.Chapters.length - 1;
+                    chapterSelect.value = selectedChapterIndex;
                     updateVerses();
-                    const lastChapter = getSelectedChapter();
-                    verseSelect.value = lastChapter.Verses.length - 1;
-                    selectedVerseIndex = lastChapter.Verses.length - 1;
+                    const lastChapterVerses = modifiedVersesOnly ? getEditedVersesInChapter(getSelectedChapter()) : getSelectedChapter().Verses;
+                    selectedVerseIndex = lastChapterVerses.length - 1;
+                    verseSelect.value = selectedVerseIndex;
                     renderVerse();
                 }
             }
         }
     }
+    
+    function getEditedVersesInBook(book) {
+        const editedVerses = [];
+        const bookAbbr = book.Abbreviation || book.Text;
+        for (const testament of BIBLEDATA.Testaments) {
+            for (const b of testament.Books) {
+                if ((b.Abbreviation || b.Text) === bookAbbr) {
+                    for (const chapter of b.Chapters) {
+                        const chapterID = chapter.ID || (b.Chapters.findIndex(c => c === chapter) + 1);
+                        for (const verse of chapter.Verses) {
+                            const verseId = `${bookAbbr}_${chapterID}_${verse.ID || (chapter.Verses.findIndex(v => v === verse) + 1)}`;
+                            if (editedData.hasOwnProperty(verseId)) {
+                                editedVerses.push(verse);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return editedVerses;
+    }
+
 
     function updateNavigationButtons() {
         const book = getSelectedBook();
         const chapter = getSelectedChapter();
-        const isFirstVerse = parseInt(selectedVerseIndex) === 0;
+        if (!book || !chapter) return;
+
+        const allBooks = [];
+        for (const testament of BIBLEDATA.Testaments) {
+            allBooks.push(...testament.Books);
+        }
+
+        const isFirstBook = allBooks.findIndex(b => b.Text === book.Text) === 0;
+        const isLastBook = allBooks.findIndex(b => b.Text === book.Text) === allBooks.length - 1;
+
         const isFirstChapter = parseInt(selectedChapterIndex) === 0;
-        const isFirstBook = parseInt(selectedBookIndex) === 0;
-        const isLastVerse = parseInt(selectedVerseIndex) === chapter.Verses.length - 1;
         const isLastChapter = parseInt(selectedChapterIndex) === book.Chapters.length - 1;
-        const isLastBook = parseInt(selectedBookIndex) === bookSelect.options.length - 2;
 
-        previousVerseButton.disabled = isFirstVerse && isFirstChapter && isFirstBook;
-        nextVerseButton.disabled = isLastVerse && isLastChapter && isLastBook;
+        const isFirstVerse = parseInt(selectedVerseIndex) === 0;
+        const isLastVerse = parseInt(selectedVerseIndex) === chapter.Verses.length - 1;
+
+        if (modifiedVersesOnly) {
+            const editedVersesInCurrentChapter = getEditedVersesInChapter(chapter);
+            const editedVersesInCurrentBook = getEditedVersesInBook(book);
+            
+            const isFirstEditedVerse = editedVersesInCurrentBook.length > 0 && editedVersesInCurrentBook[0].ID_string === getSelectedVerse().ID_string;
+            const isLastEditedVerse = editedVersesInCurrentBook.length > 0 && editedVersesInCurrentBook[editedVersesInCurrentBook.length - 1].ID_string === getSelectedVerse().ID_string;
+
+            previousVerseButton.disabled = isFirstEditedVerse;
+            nextVerseButton.disabled = isLastEditedVerse;
+
+        } else {
+            previousVerseButton.disabled = isFirstVerse && isFirstChapter && isFirstBook;
+            nextVerseButton.disabled = isLastVerse && isLastChapter && isLastBook;
+        }
     }
-
-
-    // --- FONCTIONS DE GESTION DE L'ÉTAT ET DE LA SAUVEGARDE ---
+    
+    // --- GESTION DE L'ÉTAT ET SAUVEGARDE LOCALE ---
     function loadState() {
         const savedBookIndex = localStorage.getItem('lastBookIndex');
         const savedChapterIndex = localStorage.getItem('lastChapterIndex');
         const savedVerseIndex = localStorage.getItem('lastVerseIndex');
-        const savedData = localStorage.getItem('editedData');
         const savedTheme = localStorage.getItem('theme');
 
-        if (savedData) {
-            editedData = JSON.parse(savedData);
-        }
-
-        // NOUVEAU: Logique de chargement du thème
         let initialTheme = 'light';
         if (savedTheme) {
             initialTheme = savedTheme;
@@ -285,7 +478,6 @@ function initializeApp() {
         }
         applyTheme(initialTheme);
         
-
         if (savedBookIndex && savedChapterIndex && savedVerseIndex) {
             selectedBookIndex = savedBookIndex;
             bookSelect.value = selectedBookIndex;
@@ -319,31 +511,27 @@ function initializeApp() {
             delete editedData[verseId];
         }
 
-        localStorage.setItem('editedData', JSON.stringify(editedData));
+        localStorage.setItem(`editedData_${currentVersionName}`, JSON.stringify(editedData));
         localStorage.setItem('lastBookIndex', selectedBookIndex);
         localStorage.setItem('lastChapterIndex', selectedChapterIndex);
         localStorage.setItem('lastVerseIndex', selectedVerseIndex);
         localStorage.setItem('theme', currentTheme);
+        localStorage.setItem('currentVersion', currentVersionName);
 
         console.log('Sauvegarde automatique effectuée !');
     }
 
-    // NOUVEAU: Fonctions de sauvegarde et de chargement
+    // NOUVEAU: Fonctions de sauvegarde/chargement de fichiers (inchangées)
     function savePersonalizedBible() {
-        // Crée une copie profonde des données originales pour ne pas les modifier
         const personalizedData = JSON.parse(JSON.stringify(BIBLEDATA));
 
-        // Met à jour les versets avec les modifications locales
         for (const verseId in editedData) {
             if (editedData.hasOwnProperty(verseId)) {
-                // Parse l'ID du verset (ex: "Genèse_1_1")
                 const [bookAbbr, chapterId, verseIdNum] = verseId.split('_');
 
-                // Recherche et met à jour le verset dans la copie
                 let found = false;
                 for (const testament of personalizedData.Testaments) {
                     for (const book of testament.Books) {
-                        // S'assure que le livre correspond à l'abréviation ou au nom complet
                         if (book.Text === bookAbbr || book.Abbreviation === bookAbbr) {
                             const chapter = book.Chapters.find(ch => (ch.ID || ch.ID_string) == chapterId);
                             if (chapter) {
@@ -366,7 +554,7 @@ function initializeApp() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'ma-bible-personnalisee.js';
+        a.download = `${currentVersionName}.js`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -376,17 +564,14 @@ function initializeApp() {
     }
 
     function loadPersonalizedBible(fileContent) {
-        // Évalue le contenu du fichier pour récupérer la variable BIBLEDATA
         let tempBIBLEDATA = {};
         try {
-            eval(fileContent); // Attention : cette méthode est potentiellement dangereuse si la source est inconnue.
+            eval(fileContent);
             tempBIBLEDATA = BIBLEDATA;
-            // Charge la nouvelle version dans l'application
-            BIBLEDATA = tempBIBLEDATA; 
-            editedData = {}; // Réinitialise les données éditées du localStorage
-            localStorage.removeItem('editedData'); // Supprime la sauvegarde locale
+            BIBLEDATA = tempBIBLEDATA;
+            editedData = {};
+            localStorage.removeItem('editedData');
             
-            // Re-initialise l'application avec les nouvelles données
             populateDropdowns();
             loadState();
             alert('Votre version de la Bible a été chargée avec succès !');
@@ -397,7 +582,108 @@ function initializeApp() {
         }
     }
 
+
     // --- GESTION DES ÉVÉNEMENTS ---
+    openSidebarBtn.addEventListener('click', () => {
+        sidebar.style.width = '250px';
+        document.body.style.marginLeft = '250px';
+        openSidebarBtn.style.opacity = '0';
+    });
+    
+    closeSidebarBtn.addEventListener('click', () => {
+        sidebar.style.width = '0';
+        document.body.style.marginLeft = '0';
+        openSidebarBtn.style.opacity = '1';
+    });
+
+    accordionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const panel = button.nextElementSibling;
+            const icon = button.querySelector('i');
+            button.classList.toggle('active');
+            
+            if (panel.style.maxHeight) {
+                panel.style.maxHeight = null;
+            } else {
+                panel.style.maxHeight = panel.scrollHeight + "px";
+            }
+            
+            if (icon) {
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
+            }
+        });
+    });
+
+    addBibleBtn.addEventListener('click', () => {
+        const newName = newBibleNameInput.value.trim();
+        if (newName) {
+            if (bibleVersions.hasOwnProperty(newName)) {
+                alert('Ce nom de version existe déjà. Veuillez en choisir un autre.');
+                return;
+            }
+            const confirmed = confirm(`Êtes-vous sûr de vouloir créer une nouvelle version nommée "${newName}" ?`);
+            if (confirmed) {
+                const newVersionData = JSON.parse(JSON.stringify(BIBLEDATA));
+                bibleVersions[newName] = newVersionData;
+                switchBibleVersion(newName);
+                newBibleNameInput.value = '';
+            }
+        } else {
+            alert('Veuillez entrer un nom pour la nouvelle version.');
+        }
+    });
+
+    manageBibleSelect.addEventListener('change', (e) => {
+        const selectedVersion = e.target.value;
+        if (selectedVersion) {
+            switchBibleVersion(selectedVersion);
+        }
+    });
+
+    renameBibleBtn.addEventListener('click', () => {
+        const oldName = manageBibleSelect.value;
+        if (!oldName) {
+            alert('Veuillez sélectionner une version à renommer.');
+            return;
+        }
+        const newName = prompt(`Entrez le nouveau nom pour "${oldName}" :`);
+        if (newName && newName.trim() !== '' && !bibleVersions.hasOwnProperty(newName)) {
+            const confirmed = confirm(`Êtes-vous sûr de vouloir renommer "${oldName}" en "${newName}" ?`);
+            if (confirmed) {
+                const data = bibleVersions[oldName];
+                delete bibleVersions[oldName];
+                bibleVersions[newName] = data;
+                switchBibleVersion(newName);
+            }
+        } else {
+            alert('Nom invalide ou déjà utilisé.');
+        }
+    });
+
+    deleteBibleBtn.addEventListener('click', () => {
+        const versionToDelete = manageBibleSelect.value;
+        if (versionToDelete && versionToDelete !== 'bible-data.js') {
+            const confirmed = confirm(`Êtes-vous sûr de vouloir supprimer la version "${versionToDelete}" ? Cette action est irréversible.`);
+            if (confirmed) {
+                delete bibleVersions[versionToDelete];
+                localStorage.removeItem(`editedData_${versionToDelete}`);
+                switchBibleVersion('bible-data.js'); // Revenir à la version originale
+            }
+        } else {
+            alert('Impossible de supprimer la version originale.');
+        }
+    });
+
+    versionSelect.addEventListener('change', (e) => {
+        switchBibleVersion(e.target.value);
+    });
+
+    modifiedVersesToggle.addEventListener('change', () => {
+        modifiedVersesOnly = modifiedVersesToggle.checked;
+        updateVerses();
+    });
+
     bookSelect.addEventListener('change', (e) => {
         selectedBookIndex = e.target.value;
         updateChapters();
@@ -418,13 +704,11 @@ function initializeApp() {
         renderVerse();
     });
 
-    // Événement pour le bouton de thème
     toggleThemeButton.addEventListener('click', () => {
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         applyTheme(newTheme);
     });
 
-    // NOUVEAU: Écouteurs d'événements pour la sauvegarde et le chargement
     saveFileButton.addEventListener('click', savePersonalizedBible);
     
     loadFileButton.addEventListener('click', () => {
@@ -446,9 +730,6 @@ function initializeApp() {
     nextVerseButton.addEventListener('click', goToNextVerse);
 
     // Lancement de l'application
-    populateDropdowns();
-    loadState();
-    
-    // Activation de la sauvegarde automatique toutes les 2 minutes (120 000 ms)
+    loadBibleVersions();
     setInterval(autoSave, 120000);
 }
