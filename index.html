@@ -5,49 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon Éditeur Biblique Personnalisé</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 
-    <div class="container" id="main-container">
-        <h1>Ma Bible perso</h1>
-        <p>Sélectionne un passage à lire ou à éditer.</p>
-        
-        <div class="top-controls">
-            <button id="toggle-theme-button">Sombre</button>
-            <button id="toggle-mode-button">Édition</button>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Mes Bibles</h3>
+            <button class="close-btn" id="close-sidebar-btn">&times;</button>
         </div>
+        <div class="sidebar-content">
+            
+            <div class="accordion-section">
+                <button class="accordion-button">Créer une bible <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="accordion-panel">
+                    <div class="form-group">
+                        <label for="new-bible-name">Nom de la bible :</label>
+                        <input type="text" id="new-bible-name" placeholder="Ex: Ma version perso">
+                    </div>
+                    <button id="add-bible-btn">Ajouter</button>
+                </div>
+            </div>
 
-        <div class="storage-controls">
-            <button id="save-file-button">Sauvegarder</button>
-            <input type="file" id="load-file-input" accept=".js" style="display: none;">
-            <button id="load-file-button">Charger</button>
-        </div>
+            <div class="accordion-section">
+                <button class="accordion-button">Modifier une version <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="accordion-panel">
+                    <div class="form-group">
+                        <label for="manage-bible-select">Sélectionner :</label>
+                        <select id="manage-bible-select"></select>
+                    </div>
+                    <button id="rename-bible-btn">Renommer</button>
+                    <button id="delete-bible-btn">Supprimer</button>
+                </div>
+            </div>
 
-        <div class="selection-controls">
-            <select id="book-select">
-                <option disabled selected value="">Livre</option>
-            </select>
-            <select id="chapter-select" disabled>
-                <option disabled selected value="">Chapitre</option>
-            </select>
-            <select id="verse-select" disabled>
-                <option disabled selected value="">Verset</option>
-            </select>
         </div>
-        
-        <div class="verse-navigation" style="display: none;">
-            <button id="previous-verse-btn">&lt;&lt; Précédent</button>
-            <span class="current-verse-info"></span>
-            <button id="next-verse-btn">Suivant &gt;&gt;</button>
-        </div>
+    </div>
 
-        <div id="text-display">
-        </div>
+    <div class="main-content" id="main-content">
+        <button id="open-sidebar-btn" class="open-btn">&#9776;</button>
 
-        <div id="edit-area" style="display: none;">
-            <textarea id="text-editor" placeholder="Commence à taper ta version ici..."></textarea>
-        </div>
+        <div class="container" id="main-container">
+            <h1>Ma Bible perso</h1>
+            <p>Sélectionne un passage à lire ou à éditer.</p>
+            
+            <div class="version-switch">
+                <label for="version-select">Version :</label>
+                <select id="version-select"></select>
+            </div>
 
+            <div class="top-controls">
+                <button id="toggle-theme-button">Sombre</button>
+                <button id="toggle-mode-button">Édition</button>
+            </div>
+
+            <div class="storage-controls">
+                <button id="save-file-button">Sauvegarder</button>
+                <input type="file" id="load-file-input" accept=".js" style="display: none;">
+                <button id="load-file-button">Charger</button>
+            </div>
+
+            <div class="selection-controls">
+                <select id="book-select">
+                    <option disabled selected value="">Livre</option>
+                </select>
+                <select id="chapter-select" disabled>
+                    <option disabled selected value="">Chapitre</option>
+                </select>
+                <select id="verse-select" disabled>
+                    <option disabled selected value="">Verset</option>
+                </select>
+            </div>
+            
+            <div class="verse-navigation" style="display: none;">
+                <button id="previous-verse-btn">&lt;&lt; Précédent</button>
+                <span class="current-verse-info"></span>
+                <button id="next-verse-btn">Suivant &gt;&gt;</button>
+            </div>
+
+            <div class="verse-filter">
+                <label for="modified-verses-toggle">Afficher les versets modifiés seulement</label>
+                <input type="checkbox" id="modified-verses-toggle">
+            </div>
+
+            <div id="text-display">
+            </div>
+
+            <div id="edit-area" style="display: none;">
+                <textarea id="text-editor" placeholder="Commence à taper ta version ici..."></textarea>
+            </div>
+        </div>
     </div>
 
     <script src="bible-data.js"></script>
