@@ -42,7 +42,6 @@ if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
     textDisplay.innerHTML = `<p style="color:red; text-align:center;">Erreur de chargement des données. Veuillez vérifier le fichier bible-data.js.</p>`;
     console.error("Erreur: La variable BIBLEDATA n'est pas définie ou ne contient pas la bonne structure.");
 } else {
-    // Utiliser window.BIBLEDATA pour que toutes les fonctions y accèdent
     window.BIBLEDATA = BIBLEDATA;
     initializeApp();
 }
@@ -142,7 +141,7 @@ function initializeApp() {
         }
         
         if (bookSelect.options.length > 1) {
-            bookSelect.value = selectedBookIndex >= 0 ? selectedBookIndex : 0;
+            bookSelect.value = selectedBookIndex >= 0 && bookSelect.options[selectedBookIndex + 1] ? selectedBookIndex : 0;
             selectedBookIndex = bookSelect.value;
             updateChapters();
         }
@@ -172,7 +171,7 @@ function initializeApp() {
             }
             chapterSelect.disabled = false;
             if (chapterSelect.options.length > 1) {
-                chapterSelect.value = selectedChapterIndex >= 0 ? selectedChapterIndex : 0;
+                chapterSelect.value = selectedChapterIndex >= 0 && chapterSelect.options[selectedChapterIndex + 1] ? selectedChapterIndex : 0;
                 selectedChapterIndex = chapterSelect.value;
                 updateVerses();
             }
@@ -204,7 +203,7 @@ function initializeApp() {
             }
             verseSelect.disabled = false;
             if (verseSelect.options.length > 1) {
-                verseSelect.value = selectedVerseIndex >= 0 ? selectedVerseIndex : 0;
+                verseSelect.value = selectedVerseIndex >= 0 && verseSelect.options[selectedVerseIndex + 1] ? selectedVerseIndex : 0;
                 selectedVerseIndex = verseSelect.value;
             } else {
                 selectedVerseIndex = -1;
@@ -607,6 +606,7 @@ function initializeApp() {
                 const newVersionData = JSON.parse(JSON.stringify(bibleVersions['Version Originale']));
                 bibleVersions[newName] = newVersionData;
                 newBibleNameInput.value = '';
+                updateVersionSelectors();
                 switchBibleVersion(newName);
             }
         } else {
@@ -634,6 +634,7 @@ function initializeApp() {
                 const data = bibleVersions[oldName];
                 delete bibleVersions[oldName];
                 bibleVersions[newName] = data;
+                updateVersionSelectors();
                 switchBibleVersion(newName);
             }
         } else {
@@ -648,6 +649,7 @@ function initializeApp() {
             if (confirmed) {
                 delete bibleVersions[versionToDelete];
                 localStorage.removeItem(`editedData_${versionToDelete}`);
+                updateVersionSelectors();
                 switchBibleVersion('Version Originale');
             }
         } else {
