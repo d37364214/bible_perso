@@ -498,4 +498,235 @@ function initializeApp() {
 
         if (editedText !== stripHtmlTags(originalText) && editedText.trim() !== '') {
             editedData[verseId] = `<strong>${editedText}</strong>`;
+        } else {
+            delete editedData[verseId];
         }
+
+        localStorage.setItem(`editedData_${currentVersionName}`, JSON.stringify(editedData));
+        localStorage.setItem('lastBookIndex', selectedBookIndex);
+        localStorage.setItem('lastChapterIndex', selectedChapterIndex);
+        localStorage.setItem('lastVerseIndex', selectedVerseIndex);
+        localStorage.setItem('theme', currentTheme);
+        localStorage.setItem('currentVersion', currentVersionName);
+    }
+
+    // Fonctions de sauvegarde/chargement de fichiers
+    function savePersonalizedBible() {
+        const personalizedData = JSON.parse(JSON.stringify(window.BIBLEDATA));
+
+        for (const verseId in editedData) {
+            if (editedData.hasOwnProperty(verseId)) {
+                const [bookAbbr, chapterId, verseIdNum] = verseId.split('_');
+                let found = false;
+                for (const testament of personalizedData.Testaments) {
+                    for (const book of testament.Books) {
+                        if (book.Text === bookAbbr || book.Abbreviation === bookAbbr) {
+                            const chapter = book.Chapters.find(ch => (ch.ID || ch.ID_string) == chapterId);
+                            if (chapter) {
+                                const verse = chapter.Verses.find(v => (v.ID || v.ID_string) == verseIdNum);
+                                if (verse) {
+                                    verse.Text = editedData[verseId];
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (found) break;
+                }
+            }
+        }
+
+        const dataContent = `const BIBLEDATA = ${JSON.stringify(personalizedData, null, 2)};`;
+        const blob = new Blob([dataContent], { type: 'text/javascript' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${currentVersionName}.js`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert('Votre version de la Bible a été sauvegardée !');
+    }
+
+    function loadPersonalizedBible(fileContent) {
+        try {
+            // Utiliser une variable temporaire pour évaluer le contenu du fichier
+            let tempBIBLEDATA = {};
+            eval(fileContent.replace('const BIBLEDATA', 'tempBIBLEDATA'));
+
+            if (typeof tempBIBLEDATA === 'undefined' || !tempBIBLEDATA.Testaments) {
+                throw new Error("Le fichier ne contient pas la bonne structure de données.");
+            }
+            
+            const newVersionName = prompt("Entrez un nom pour cette version de la Bible chargée :");
+            if (newVersionName && newVersionName.trim() !== '') {
+                bibleVersions[newVersionName] = tempBIBLEDATA;
+                // Mettre à jour les listes et passer à la nouvelle version
+                updateVersionSelectors();
+                switchBibleVersion(newVersionName);
+                alert(`La version "${newVersionName}" a été chargée avec succès !`);
+            } else {
+                alert("Nom de version invalide. Le chargement a été annulé.");
+            }
+        } catch (e) {
+            console.error("Erreur de chargement du fichier :", e);
+            alert("Erreur: Le fichier sélectionné n'est pas une version de Bible valide.");
+        }
+    }
+
+    // --- GESTION DES ÉVÉNEMENTS ---
+    openSidebarBtn.addEventListener('click', () => {
+        sidebar.style.width = '250px';
+        document.body.style.marginLeft = '250px';
+        openSidebarBtn.style.opacity = '0';
+    });
+    
+    closeSidebarBtn.addEventListener('click', () => {
+        sidebar.style.width = '0';
+        document.body.style.marginLeft = '0';
+        openSidebarBtn.style.opacity = '1';
+    });
+
+    accordionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const panel = button.nextElementSibling;
+            const icon = button.querySelector('i');
+            button.classList.toggle('active');
+            
+            if (panel.style.maxHeight) {
+                panel.style.maxHeight = null;
+            } else {
+                panel.style.maxHeight = panel.scrollHeight + "px";
+            }
+            
+            if (icon) {
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
+            }
+        });
+    });
+
+    addBibleBtn.addEventListener('click', () => {
+        const newName = newBibleNameInput.value.trim();
+        if (newName) {
+            if (bibleVersions.hasOwnProperty(newName)) {
+                alert('Ce nom de version existe déjà. Veuillez en choisir un autre.');
+                return;
+            }
+            const confirmed = confirm(`Êtes-vous sûr de vouloir créer une nouvelle version nommée "${newName}" ?`);
+            if (confirmed) {
+                const newVersionData = JSON.parse(JSON.stringify(bibleVersions['Version Originale']));
+                bibleVersions[newName] = newVersionData;
+                newBibleNameInput.value = '';
+                updateVersionSelectors();
+                switchBibleVersion(newName);
+            }
+        } else {
+            alert('Veuillez entrer un nom pour la nouvelle version.');
+        }
+    });
+
+    manageBibleSelect.addEventListener('change', (e) => {
+        const selectedVersion = e.target.value;
+        if (selectedVersion) {
+            switchBibleVersion(selectedVersion);
+        }
+    });
+
+    renameBibleBtn.addEventListener('click', () => {
+        const oldName = manageBibleSelect.value;
+        if (!oldName) {
+            alert('Veuillez sélectionner une version à renommer.');
+            return;
+        }
+        const newName = prompt(`Entrez le nouveau nom pour "${oldName}" :`);
+        if (newName && newName.trim() !== '' && !bibleVersions.hasOwnProperty(newName)) {
+            const confirmed = confirm(`Êtes-vous sûr de vouloir renommer "${oldName}" en "${newName}" ?`);
+            if (confirmed) {
+                const data = bibleVersions[oldName];
+                delete bibleVersions[oldName];
+                bibleVersions[newName] = data;
+                updateVersionSelectors();
+                switchBibleVersion(newName);
+            }
+        } else {
+            alert('Nom invalide ou déjà utilisé.');
+        }
+    });
+
+    deleteBibleBtn.addEventListener('click', () => {
+        const versionToDelete = manageBibleSelect.value;
+        if (versionToDelete && versionToDelete !== 'Version Originale') {
+            const confirmed = confirm(`Êtes-vous sûr de vouloir supprimer la version "${versionToDelete}" ? Cette action est irréversible.`);
+            if (confirmed) {
+                delete bibleVersions[versionToDelete];
+                localStorage.removeItem(`editedData_${versionToDelete}`);
+                updateVersionSelectors();
+                switchBibleVersion('Version Originale');
+            }
+        } else {
+            alert('Impossible de supprimer la version originale.');
+        }
+    });
+
+    versionSelect.addEventListener('change', (e) => {
+        switchBibleVersion(e.target.value);
+    });
+
+    modifiedVersesToggle.addEventListener('change', () => {
+        modifiedVersesOnly = modifiedVersesToggle.checked;
+        updateVerses();
+    });
+
+    bookSelect.addEventListener('change', (e) => {
+        selectedBookIndex = e.target.value;
+        updateChapters();
+    });
+
+    chapterSelect.addEventListener('change', (e) => {
+        selectedChapterIndex = e.target.value;
+        updateVerses();
+    });
+
+    verseSelect.addEventListener('change', (e) => {
+        selectedVerseIndex = e.target.value;
+        renderVerse();
+    });
+
+    toggleModeButton.addEventListener('click', () => {
+        currentMode = currentMode === 'read' ? 'edit' : 'read';
+        renderVerse();
+    });
+
+    toggleThemeButton.addEventListener('click', () => {
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        applyTheme(newTheme);
+    });
+
+    saveFileButton.addEventListener('click', savePersonalizedBible);
+    
+    loadFileButton.addEventListener('click', () => {
+        loadFileInput.click();
+    });
+
+    loadFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                loadPersonalizedBible(e.target.result);
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    previousVerseButton.addEventListener('click', goToPreviousVerse);
+    nextVerseButton.addEventListener('click', goToNextVerse);
+
+    // Lancement de l'application
+    loadBibleVersions();
+    setInterval(autoSave, 120000);
+}
