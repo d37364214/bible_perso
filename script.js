@@ -117,7 +117,6 @@ function initializeApp() {
             editedData = JSON.parse(savedData);
         }
 
-        // Réutilise les index sauvegardés si la version change, sinon charge la dernière session
         if (previousBookIndex !== -1 && previousChapterIndex !== -1 && previousVerseIndex !== -1) {
             selectedBookIndex = previousBookIndex;
             selectedChapterIndex = previousChapterIndex;
@@ -554,15 +553,19 @@ function initializeApp() {
 
     function loadPersonalizedBible(fileContent) {
         try {
-            const tempBIBLEDATA = {};
-            eval(fileContent);
-            if (typeof BIBLEDATA === 'undefined' || !BIBLEDATA.Testaments) {
+            // Utiliser une variable temporaire pour évaluer le contenu du fichier
+            let tempBIBLEDATA = {};
+            eval(fileContent.replace('const BIBLEDATA', 'tempBIBLEDATA'));
+
+            if (typeof tempBIBLEDATA === 'undefined' || !tempBIBLEDATA.Testaments) {
                 throw new Error("Le fichier ne contient pas la bonne structure de données.");
             }
             
             const newVersionName = prompt("Entrez un nom pour cette version de la Bible chargée :");
             if (newVersionName && newVersionName.trim() !== '') {
-                bibleVersions[newVersionName] = window.BIBLEDATA;
+                bibleVersions[newVersionName] = tempBIBLEDATA;
+                // Mettre à jour les listes et passer à la nouvelle version
+                updateVersionSelectors();
                 switchBibleVersion(newVersionName);
                 alert(`La version "${newVersionName}" a été chargée avec succès !`);
             } else {
