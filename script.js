@@ -104,6 +104,10 @@ function initializeApp() {
     }
 
     function switchBibleVersion(versionName) {
+        const previousBookIndex = selectedBookIndex;
+        const previousChapterIndex = selectedChapterIndex;
+        const previousVerseIndex = selectedVerseIndex;
+
         currentVersionName = versionName;
         window.BIBLEDATA = bibleVersions[currentVersionName];
 
@@ -113,8 +117,16 @@ function initializeApp() {
             editedData = JSON.parse(savedData);
         }
 
+        // Réutilise les index sauvegardés si la version change, sinon charge la dernière session
+        if (previousBookIndex !== -1 && previousChapterIndex !== -1 && previousVerseIndex !== -1) {
+            selectedBookIndex = previousBookIndex;
+            selectedChapterIndex = previousChapterIndex;
+            selectedVerseIndex = previousVerseIndex;
+        } else {
+            loadState();
+        }
+
         populateDropdowns();
-        loadState();
         saveBibleVersions();
     }
     
