@@ -3,10 +3,7 @@
     "filesystem": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspaces/bible_perso"]
-    },
-    "graph": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-graph", "/workspaces/bible_perso"]
     }
-  }
+  },
+  "defaultProjectFile": "GEMINI.md"
 }
