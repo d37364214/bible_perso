@@ -104,30 +104,46 @@ function initializeApp() {
     }
 
     function switchBibleVersion(versionName) {
-        const previousBookIndex = selectedBookIndex;
-        const previousChapterIndex = selectedChapterIndex;
-        const previousVerseIndex = selectedVerseIndex;
+    // 1. Sauvegarde la position actuelle avant le changement
+    const previousBookIndex = selectedBookIndex;
+    const previousChapterIndex = selectedChapterIndex;
+    const previousVerseIndex = selectedVerseIndex;
 
-        currentVersionName = versionName;
-        window.BIBLEDATA = bibleVersions[currentVersionName];
+    currentVersionName = versionName;
+    window.BIBLEDATA = bibleVersions[currentVersionName];
 
-        editedData = {};
-        const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
-        if (savedData) {
-            editedData = JSON.parse(savedData);
-        }
-
-        if (previousBookIndex !== -1 && previousChapterIndex !== -1 && previousVerseIndex !== -1) {
-            selectedBookIndex = previousBookIndex;
-            selectedChapterIndex = previousChapterIndex;
-            selectedVerseIndex = previousVerseIndex;
-        } else {
-            loadState();
-        }
-
-        populateDropdowns();
-        saveBibleVersions();
+    editedData = {};
+    const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
+    if (savedData) {
+        editedData = JSON.parse(savedData);
     }
+    
+    // 2. Tente de restaurer la position précédente, si elle est valide
+    if (previousBookIndex !== -1 && previousChapterIndex !== -1 && previousVerseIndex !== -1) {
+        // Met à jour les index sans recharger l'état du localStorage
+        selectedBookIndex = previousBookIndex;
+        selectedChapterIndex = previousChapterIndex;
+        selectedVerseIndex = previousVerseIndex;
+        
+        // 3. Appelle populateDropdowns pour mettre à jour les listes
+        populateDropdowns();
+        
+        // S'assure que les valeurs des listes correspondent aux index conservés
+        bookSelect.value = selectedBookIndex;
+        updateChapters();
+        chapterSelect.value = selectedChapterIndex;
+        updateVerses();
+        verseSelect.value = selectedVerseIndex;
+        renderVerse();
+    } else {
+        // Si aucune position n'est enregistrée, charge l'état depuis le localStorage (comportement initial)
+        loadState();
+        populateDropdowns();
+    }
+    
+    saveBibleVersions();
+}
+
     
     // --- FONCTIONS DE GESTION DE L'INTERFACE ---
     function populateDropdowns() {
