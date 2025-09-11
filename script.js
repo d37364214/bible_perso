@@ -103,45 +103,38 @@ function initializeApp() {
         renameBibleBtn.disabled = currentVersionName === 'Version Originale';
     }
 
-    function switchBibleVersion(versionName) {
-    // 1. Sauvegarde la position actuelle avant le changement
-    const previousBookIndex = selectedBookIndex;
-    const previousChapterIndex = selectedChapterIndex;
-    const previousVerseIndex = selectedVerseIndex;
+   function switchBibleVersion(versionName) {
+  // Conserver les index actuels de livre, chapitre et verset
+  const previousBookIndex = selectedBookIndex;
+  const previousChapterIndex = selectedChapterIndex;
+  const previousVerseIndex = selectedVerseIndex;
 
-    currentVersionName = versionName;
-    window.BIBLEDATA = bibleVersions[currentVersionName];
+  currentVersionName = versionName;
+  window.BIBLEDATA = bibleVersions[currentVersionName];
 
-    editedData = {};
-    const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
-    if (savedData) {
-        editedData = JSON.parse(savedData);
-    }
-    
-    // 2. Tente de restaurer la position précédente, si elle est valide
-    if (previousBookIndex !== -1 && previousChapterIndex !== -1 && previousVerseIndex !== -1) {
-        // Met à jour les index sans recharger l'état du localStorage
-        selectedBookIndex = previousBookIndex;
-        selectedChapterIndex = previousChapterIndex;
-        selectedVerseIndex = previousVerseIndex;
-        
-        // 3. Appelle populateDropdowns pour mettre à jour les listes
-        populateDropdowns();
-        
-        // S'assure que les valeurs des listes correspondent aux index conservés
-        bookSelect.value = selectedBookIndex;
-        updateChapters();
-        chapterSelect.value = selectedChapterIndex;
-        updateVerses();
-        verseSelect.value = selectedVerseIndex;
-        renderVerse();
-    } else {
-        // Si aucune position n'est enregistrée, charge l'état depuis le localStorage (comportement initial)
-        loadState();
-        populateDropdowns();
-    }
-    
-    saveBibleVersions();
+  editedData = {};
+  const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
+  if (savedData) {
+    editedData = JSON.parse(savedData);
+  }
+
+  // Utiliser les index conservés pour restaurer la position précédente
+  selectedBookIndex = previousBookIndex;
+  selectedChapterIndex = previousChapterIndex;
+  selectedVerseIndex = previousVerseIndex;
+
+  // Appeler populateDropdowns pour mettre à jour les listes
+  populateDropdowns();
+
+  // S'assurer que les valeurs des listes correspondent aux index conservés
+  bookSelect.value = selectedBookIndex;
+  updateChapters();
+  chapterSelect.value = selectedChapterIndex;
+  updateVerses();
+  verseSelect.value = selectedVerseIndex;
+  renderVerse();
+
+  saveBibleVersions();
 }
 
     
