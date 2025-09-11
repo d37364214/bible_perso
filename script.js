@@ -103,7 +103,7 @@ function initializeApp() {
         renameBibleBtn.disabled = currentVersionName === 'Version Originale';
     }
 
-   function switchBibleVersion(versionName) {
+  function switchBibleVersion(versionName) {
   // Conserver les index actuels de livre, chapitre et verset
   const previousBookIndex = selectedBookIndex;
   const previousChapterIndex = selectedChapterIndex;
@@ -135,6 +135,14 @@ function initializeApp() {
     chapterSelect.value = selectedChapterIndex;
     updateVerses();
     verseSelect.value = selectedVerseIndex;
+
+    // Conserver les valeurs actuelles de selectedChapterIndex et selectedVerseIndex
+    const chapter = getSelectedChapter();
+    const verse = getSelectedVerse();
+    if (chapter && verse) {
+      selectedChapterIndex = chapter.Index;
+      selectedVerseIndex = verse.Index;
+    }
   } else {
     // Si les index ne sont pas valides, charger l'état par défaut
     loadState();
