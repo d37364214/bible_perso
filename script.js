@@ -118,20 +118,28 @@ function initializeApp() {
     editedData = JSON.parse(savedData);
   }
 
-  // Utiliser les index conservés pour restaurer la position précédente
-  selectedBookIndex = previousBookIndex;
-  selectedChapterIndex = previousChapterIndex;
-  selectedVerseIndex = previousVerseIndex;
-
   // Appeler populateDropdowns pour mettre à jour les listes
   populateDropdowns();
 
-  // S'assurer que les valeurs des listes correspondent aux index conservés
-  bookSelect.value = selectedBookIndex;
-  updateChapters();
-  chapterSelect.value = selectedChapterIndex;
-  updateVerses();
-  verseSelect.value = selectedVerseIndex;
+  // Vérifier si les index conservés sont valides pour la nouvelle version
+  const book = getSelectedBook();
+  if (book && book.Chapters && book.Chapters[previousChapterIndex] && book.Chapters[previousChapterIndex].Verses[previousVerseIndex]) {
+    // Utiliser les index conservés pour restaurer la position précédente
+    selectedBookIndex = previousBookIndex;
+    selectedChapterIndex = previousChapterIndex;
+    selectedVerseIndex = previousVerseIndex;
+
+    // Mettre à jour les listes déroulantes avec les bons index
+    bookSelect.value = selectedBookIndex;
+    updateChapters();
+    chapterSelect.value = selectedChapterIndex;
+    updateVerses();
+    verseSelect.value = selectedVerseIndex;
+  } else {
+    // Si les index ne sont pas valides, charger l'état par défaut
+    loadState();
+  }
+
   renderVerse();
 
   saveBibleVersions();
