@@ -104,53 +104,42 @@ function initializeApp() {
     }
 
   function switchBibleVersion(versionName) {
-  // Conserver les index actuels de livre, chapitre et verset
-  const previousBookIndex = selectedBookIndex;
-  const previousChapterIndex = selectedChapterIndex;
-  const previousVerseIndex = selectedVerseIndex;
+    // Sauvegarder les indices actuels (livre, chapitre, verset)
+    const previousBookIndex = selectedBookIndex;
+    const previousChapterIndex = selectedChapterIndex;
+    const previousVerseIndex = selectedVerseIndex;
 
-  currentVersionName = versionName;
-  window.BIBLEDATA = bibleVersions[currentVersionName];
+    // Changer la version actuelle
+    currentVersionName = versionName;
+    window.BIBLEDATA = bibleVersions[currentVersionName];
 
-  editedData = {};
-  const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
-  if (savedData) {
-    editedData = JSON.parse(savedData);
-  }
+    // Recharger les données éditées pour cette version
+    editedData = {};
+    const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
+    if (savedData) {
+        editedData = JSON.parse(savedData);
+    }
 
-  // Appeler populateDropdowns pour mettre à jour les listes
-  populateDropdowns();
+    // Recharger les listes déroulantes
+    populateDropdowns();
 
-  // Vérifier si les index conservés sont valides pour la nouvelle version
-  const book = getSelectedBook();
-  if (book && book.Chapters && book.Chapters[previousChapterIndex] && book.Chapters[previousChapterIndex].Verses[previousVerseIndex]) {
-    // Utiliser les index conservés pour restaurer la position précédente
+    // Restaurer les indices sauvegardés
     selectedBookIndex = previousBookIndex;
     selectedChapterIndex = previousChapterIndex;
     selectedVerseIndex = previousVerseIndex;
 
-    // Mettre à jour les listes déroulantes avec les bons index
+    // Mettre à jour les listes déroulantes pour refléter l'état actuel
     bookSelect.value = selectedBookIndex;
     updateChapters();
     chapterSelect.value = selectedChapterIndex;
     updateVerses();
     verseSelect.value = selectedVerseIndex;
 
-    // Conserver les valeurs actuelles de selectedChapterIndex et selectedVerseIndex
-    const chapter = getSelectedChapter();
-    const verse = getSelectedVerse();
-    if (chapter && verse) {
-      selectedChapterIndex = chapter.Index;
-      selectedVerseIndex = verse.Index;
-    }
-  } else {
-    // Si les index ne sont pas valides, charger l'état par défaut
-    loadState();
-  }
+    // Afficher le verset actuel
+    renderVerse();
 
-  renderVerse();
-
-  saveBibleVersions();
+    // Sauvegarder les versions de la Bible
+    saveBibleVersions();
 }
 
     
