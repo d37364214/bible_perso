@@ -103,17 +103,17 @@ function initializeApp() {
         renameBibleBtn.disabled = currentVersionName === 'Version Originale';
     }
 
-  function switchBibleVersion(versionName) {
-    // Sauvegarder les indices actuels (livre, chapitre, verset)
+function switchBibleVersion(versionName) {
+    // Sauvegarder la position actuelle
     const previousBookIndex = selectedBookIndex;
     const previousChapterIndex = selectedChapterIndex;
     const previousVerseIndex = selectedVerseIndex;
 
-    // Changer la version actuelle
+    // Changer la version
     currentVersionName = versionName;
     window.BIBLEDATA = bibleVersions[currentVersionName];
 
-    // Recharger les données éditées pour cette version
+    // Recharger les données éditées
     editedData = {};
     const savedData = localStorage.getItem(`editedData_${currentVersionName}`);
     if (savedData) {
@@ -123,22 +123,29 @@ function initializeApp() {
     // Recharger les listes déroulantes
     populateDropdowns();
 
-    // Restaurer les indices sauvegardés
-    selectedBookIndex = previousBookIndex;
-    selectedChapterIndex = previousChapterIndex;
-    selectedVerseIndex = previousVerseIndex;
+    // ✅ Restaurer la sélection (en forçant l’update dans le bon ordre)
+    if (previousBookIndex !== null) {
+        bookSelect.value = previousBookIndex;
+        selectedBookIndex = parseInt(bookSelect.value, 10);
+        updateChapters();
+    }
 
-    // Mettre à jour les listes déroulantes pour refléter l'état actuel
-    bookSelect.value = selectedBookIndex;
-    updateChapters();
-    chapterSelect.value = selectedChapterIndex;
-    updateVerses();
-    verseSelect.value = selectedVerseIndex;
+    if (previousChapterIndex !== null) {
+        chapterSelect.value = previousChapterIndex;
+        selectedChapterIndex = parseInt(chapterSelect.value, 10);
+        updateVerses();
+    }
 
-    // Afficher le verset actuel
+    if (previousVerseIndex !== null) {
+        verseSelect.value = previousVerseIndex;
+        selectedVerseIndex = parseInt(verseSelect.value, 10);
+    }
+
+    // ✅ Rafraîchir les contrôles et l’affichage
     renderVerse();
+    updateNavigationButtons();
 
-    // Sauvegarder les versions de la Bible
+    // Sauvegarder les versions
     saveBibleVersions();
 }
 
