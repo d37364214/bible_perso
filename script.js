@@ -158,7 +158,7 @@ function switchBibleVersion(versionName) {
         
 git    status    const frag
 git status 
-ment = document.createDocumentFragment();
+git commit -m "ok"ment = document.createDocumentFragment();
         let bookIndex = 0;
         for (const testament of window.BIBLEDATA.Testaments) {
             for (const book of testament.Books) {
