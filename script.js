@@ -156,6 +156,7 @@ function switchBibleVersion(versionName) {
         chapterSelect.innerHTML = '<option disabled selected value="">Chapitre</option>';
         verseSelect.innerHTML = '<option disabled selected value="">Verset</option>';
         
+        const fragment = document.createDocumentFragment();
         let bookIndex = 0;
         for (const testament of window.BIBLEDATA.Testaments) {
             for (const book of testament.Books) {
@@ -168,9 +169,11 @@ function switchBibleVersion(versionName) {
                 }
                 
                 bookSelect.appendChild(option);
+                fragment.appendChild(option);
                 bookIndex++;
             }
         }
+        bookSelect.appendChild(fragment);
         
         if (bookSelect.options.length > 1) {
             bookSelect.value = selectedBookIndex >= 0 && bookSelect.options[selectedBookIndex + 1] ? selectedBookIndex : 0;
