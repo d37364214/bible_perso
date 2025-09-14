@@ -156,7 +156,8 @@ function switchBibleVersion(versionName) {
         chapterSelect.innerHTML = '<option disabled selected value="">Chapitre</option>';
         verseSelect.innerHTML = '<option disabled selected value="">Verset</option>';
         
-        const fragment = document.createDocumentFragment();
+git    status    const frag
+ment = document.createDocumentFragment();
         let bookIndex = 0;
         for (const testament of window.BIBLEDATA.Testaments) {
             for (const book of testament.Books) {
