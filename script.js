@@ -191,7 +191,7 @@ function initializeApp() {
         
         if (bookSelect.options.length > 1) {
             bookSelect.value = selectedBookIndex >= 0 && bookSelect.options[selectedBookIndex + 1] ? selectedBookIndex : 0;
-            selectedBookIndex = bookSelect.value;
+            selectedBookIndex = Number(bookSelect.value);
             updateChapters();
         }
     }
